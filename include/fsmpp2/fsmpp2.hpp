@@ -92,6 +92,16 @@ public:
         );
     }
 
+    template<class S>
+    bool is_in() const {
+        return type_list_index<S>(type_list{}) == index_;
+    }
+
+    template<class S>
+    S& state() {
+        return *reinterpret_cast<S *>(storage_);
+    }
+
     template<class F>
     void apply(F func) {
         apply(func, std::make_index_sequence<sizeof...(States)>{});
@@ -147,6 +157,16 @@ public:
         );
 
         return result;
+    }
+
+    template<class S>
+    bool is_in() const {
+        return states_.template is_in<S>();
+    }
+
+    template<class S>
+    S& state() {
+        return states_.template state<S>();
     }
 
 private:
