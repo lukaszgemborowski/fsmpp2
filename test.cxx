@@ -1,193 +1,375 @@
 #include <tuple>
 #include <functional>
 #include <variant>
+#include <array>
 #include <iostream>
 
 // framework
 namespace sm
 {
-
-namespace handle_outcomes
+namespace detail
 {
 
-template<template<typename> typename To>
-struct transit_to {
-    template<class B>
-    using dest_t = To<B>;
+template<class... T> struct type_list {};
+
+template<class X, class F, class ... T>
+constexpr auto type_list_index(type_list<F, T...>, std::size_t idx = 0)
+{
+    if (std::is_same_v<F, X>) {
+        return idx;
+    } else {
+        if constexpr (sizeof...(T) > 0) {
+            return type_list_index<X>(type_list<T...>{}, idx + 1);
+        } else {
+            return idx + 1;
+        }
+    }
+}
+
+template<std::size_t I, std::size_t Target, class F, class... T>
+struct type_list_type_impl {
+    using type = typename type_list_type_impl<I + 1, Target, T...>::type;
 };
 
-template<class>
-struct is_transit_to : std::false_type {};
+template<std::size_t I, class F, class... T>
+struct type_list_type_impl<I, I, F, T...> {
+    using type = F;
+};
 
-template<template<typename> typename T>
-struct is_transit_to<transit_to<T>> : std::true_type {};
+template<std::size_t I, class F, class... T>
+struct type_list_type {};
 
-template<class T>
-static constexpr auto is_transit_to_v = is_transit_to<T>::value;
+template<std::size_t I, class F, class... T>
+struct type_list_type<I, type_list<F, T...>> {
+    using type = typename type_list_type_impl<0, I, F, T...>::type;
+};
+
+
+template<class... F>
+constexpr auto type_list_size(type_list<F...>)
+{
+    return sizeof...(F);
+}
+
+template<class X, class F, class ... T>
+constexpr bool type_list_has(type_list<F, T...> l)
+{
+    auto idx = type_list_index<X>(l);
+    return idx < type_list_size(l);
+}
+
+template<class... T>
+constexpr auto storage_for(type_list<T...>)
+{
+    static_assert(sizeof...(T) > 0);
+
+    std::array<std::size_t, sizeof...(T)> arr{sizeof(T)...};
+    return *std::max_element(arr.begin(), arr.end());
+}
+
+// sm specific
+template<class S, class E>
+concept EventHandler = requires(S s, E e) {
+    s.handle(e);
+};
 
 struct handled {};
 struct not_handled {};
+template<class T> struct transition { using type = T; };
 
-} // namespace handle_outcome
-
-template<class T>
-struct handle_result {
-    using result_t = T;
+struct NullContext {};
+struct NoSubStates {
+    template<class E> auto handle(E const&) { return false; }
 };
 
-template<template <typename> typename To>
-auto transition() {
-    return handle_result<handle_outcomes::transit_to<To>>{};
-}
+} // detail
 
-inline auto handled() {
-    return handle_result<handle_outcomes::handled>{};
-}
+struct event {};
 
-inline auto not_handled() {
-    return handle_result<handle_outcomes::not_handled>{};
-}
+template<class... S>
+struct transitions {
+    using list = detail::type_list<S...>;
+    std::size_t idx;
 
-struct event {
-    virtual ~event() noexcept = default;
-};
+    enum class result {
+        not_handled,
+        handled,
+        transition
+    } outcome;
 
-template<class T>
-concept Event = std::is_base_of_v<event, T>;
-
-template<class Base, class SubStates = void>
-struct state {
-    state(Base &)
+    transitions(std::size_t i)
+        : idx {i}
+        , outcome {result::transition}
     {}
 
-    // dummy, to "handle" not handled events from the derived state
-    template<Event E> auto handle(E const&) { return not_handled(); }
-};
-
-struct Context {};
-
-template<
-    template<typename> typename First,
-    template<typename> typename... S>
-struct state_set {
-    state_set()
-        : context_ {}
-        , current_state_ {std::in_place_type<First<Context>>, context_}
-    {}
-
-    template<Event E>
-    void dispatch(E const& e)
+    template<class U>
+    transitions(transitions<U>)
+        : idx {detail::type_list_index<U>(list{})}
+        , outcome {result::transition}
     {
-        // call current states handle method
-        std::visit(
-            [&e, this](auto &s) { 
-                auto call_handle = [&s, &e]() { return s.handle(e); };
+    }
 
-                if constexpr (std::is_same_v<decltype(call_handle()), void>) {
-                    call_handle();
-                } else {
-                    auto r = call_handle();
-                    using return_t = decltype(r)::result_t;
-                    if constexpr (handle_outcomes::is_transit_to_v<return_t>) {
-                        transition<typename return_t::dest_t<Context>>();
-                    }
-                }
-            },
-            current_state_
+    transitions(detail::handled)
+        : idx {sizeof...(S)}
+        , outcome {result::handled}
+    {}
+
+    transitions(detail::not_handled)
+        : idx {sizeof...(S)}
+        , outcome {result::not_handled}
+    {}
+};
+
+template<class Context = detail::NullContext, class SubStates = detail::NoSubStates>
+struct state {
+    using context_type = Context;
+
+    template<class S>
+    auto transition() const {
+        return transitions<S>{0};
+    }
+
+    auto not_handled() const {
+        return detail::not_handled{};
+    }
+
+    auto handled() const {
+        return detail::handled{};
+    }
+
+    SubStates substates_;
+};
+
+template<class... States>
+struct state_instance
+{
+    template<class F, class ...>
+    struct state_context_type {
+        using type = typename F::context_type;
+    };
+
+public:
+    using context_type = typename state_context_type<States...>::type;
+    using type_list = detail::type_list<States...>;
+
+    template<class State>
+    void create() {
+        static_assert(detail::type_list_has<State>(type_list{}), "state is not in set");
+
+        new (storage_) State ();
+        index_ = detail::type_list_index<State>(type_list{});
+    }
+
+    void destroy() {
+        apply(
+            [this]<typename T>(T *ptr) {
+                ptr->~T();
+                index_ = sizeof...(States);
+            }
         );
     }
 
-    template<class Dest>
-    void transition()
-    {
-        // clear current state
-        current_state_.template emplace<state<Context>>(context_);
-
-        // replace with a new state
-        current_state_.template emplace<Dest>(context_);
+    template<class F>
+    void apply(F func) {
+        apply(func, std::make_index_sequence<sizeof...(States)>{});
     }
 
 private:
-    Context context_;
-    std::variant<state<Context>, First<Context>, S<Context>...> current_state_;
-};
-
-template<class S>
-struct state_machine {
-    template<Event E>
-    void dispatch(E const& e) {
-        states_.dispatch(e);
+    template<class F, std::size_t... Idx>
+    void apply(F func, std::index_sequence<Idx...>) {
+        bool executed = false;
+        (apply_one<Idx>(executed, func), ...);
     }
 
-    S states_;
+    template<std::size_t I, class F>
+    void apply_one(bool& executed, F func) {
+        if (!executed && I == index_) {
+            using state_type = typename detail::type_list_type<I, type_list>::type;
+            func(reinterpret_cast<state_type *>(storage_));
+            executed = true;
+        }
+    }
+
+private:
+    // TODO: extract storage type to separate class
+    unsigned char storage_[detail::storage_for(detail::type_list<States...>{})];
+    std::size_t index_ = sizeof...(States);
+    context_type context_;
 };
 
-}
-// usage
-struct MeasureEvent : sm::event {};
-struct ButtonEvent : sm::event {
-    bool isPressed = true;
-};
-
-template<class Context> struct power_off;
-template<class Context> struct blink_green;
-template<class Context> struct blink_red;
-
-template<class Context> struct blink_green : sm::state<Context>
+template<class First, class... States>
+struct states
 {
-    blink_green(Context &c) : sm::state<Context>{c}
-    {}
+public:
+    using type_list = detail::type_list<First, States...>;
+
+    // TODO: verify that all states use the same context_type, otherwise static_assert
+    using context_type = typename First::context_type;
+
+    states()
+    {
+        states_.template create<First>();
+    }
+
+    ~states()
+    {
+        states_.destroy();
+    }
+
+    template<class E>
+    auto handle(E const& e) {
+        auto result = false;
+        states_.apply(
+            [this, &e, &result](auto *ptr) { result = handle(*ptr, e); }
+        );
+
+        return result;
+    }
+
+private:
+    template<class S, class E>
+    bool handle(S &state, E const& e) requires detail::EventHandler<S, E> {
+        if (!state.substates_.handle(e)) {
+            return handle_result(state.handle(e));
+        } else {
+            return true;
+        }
+    }
+
+    template<class S, class E>
+    bool handle(S& state, E const& e) {
+        if (state.substates_.handle(e)) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    bool handle_result(detail::not_handled) {
+        return false;
+    }
+
+    bool handle_result(detail::handled) {
+        return true;
+    }
+
+    template<class... T>
+    bool handle_result(transitions<T...> t) {
+        // TODO: verify T... are in First,States...
+        handle_transition(t, std::make_index_sequence<sizeof...(T)>{});
+        return true; // assume true
+    }
+
+    template<class Transition, std::size_t... I>
+    void handle_transition(Transition trans, std::index_sequence<I...>) {
+        (handle_transition_impl<I>(trans), ...);
+    }
+
+    template<std::size_t I, class Transition>
+    void handle_transition_impl(Transition trans) {
+        if (trans.idx == I) {
+            states_.destroy();
+
+            using transition_type_list = typename Transition::list;
+            using type_at_index = typename detail::type_list_type<I, transition_type_list>::type;
+
+            if constexpr (detail::type_list_has<type_at_index>(type_list{})) {
+                states_.template create<type_at_index>();
+            }
+        }
+    }
+
+private:
+    state_instance<First, States...> states_;
 };
 
-template<class Context> struct blink_red : sm::state<Context>
-{
-    blink_red(Context &c) : sm::state<Context>{c}
-    {}
+} // sm
+
+
+struct Ev1 : sm::event {
+    int value = 0;
+};
+struct Ev2 : sm::event {
+    int value = 0;
 };
 
-template<class Base>
-struct power_on : sm::state<Base>
-{
-    power_on(Base &b)
-        : sm::state<Base>{b}
-    {
-        std::cout << "power_on enter\n";
+class A;
+class B;
+class C;
+
+struct A : sm::state<> {
+    A() {
+        std::cout << "A enter" << std::endl;
     }
 
-    auto handle(ButtonEvent const&) const
+    ~A() {
+        std::cout << "A exit" << std::endl;
+    }
+
+    auto handle(Ev1 const&) -> sm::transitions<B, C>
     {
-        std::cout << "power_on ButtonEvent\n";
-        return sm::transition<power_off>();
+        std::cout << "A::Ev1" << std::endl;
+        return transition<B>();
     }
 };
 
-template<class Context>
-struct power_off : sm::state<Context>
+struct B1 : sm::state<>
 {
-    power_off(Context &base)
-        : sm::state<Context>{base}
-    {
-        std::cout << "power_off enter\n";
+    B1() {
+        std::cout << "B1" << std::endl;
     }
 
-    ~power_off() {
-        std::cout << "power_off exit\n";
+    auto handle(Ev1 const&)
+    {
+        std::cout << "B1::Ev1" << std::endl;
+        return handled();
+    }
+};
+
+struct B2 : sm::state<>
+{
+    B2() {
+        std::cout << "B2" << std::endl;
+    }
+};
+
+struct B : sm::state<sm::detail::NullContext, sm::states<B1, B2>> {
+    B() {
+        std::cout << "B enter" << std::endl;
     }
 
-    auto handle(ButtonEvent const& e)
+    ~B() {
+        std::cout << "B exit" << std::endl;
+    }
+
+    auto handle(Ev2 const& e) -> sm::transitions<A, C>
     {
-        std::cout << "power_off ButtonEvent\n";
-        return sm::transition<power_on>();
+        std::cout << "B::Ev2" << std::endl;
+
+        if (e.value == 1) {
+            return transition<A>();
+        } else if (e.value == 2) {
+            return transition<C>();
+        }
+
+        return not_handled();
+    }
+};
+
+struct C : sm::state<> {
+    C() {
+        std::cout << "C enter" << std::endl;
+    }
+
+    ~C() {
+        std::cout << "C exit" << std::endl;
     }
 };
 
 
 int main()
 {
-    // using power_on_states = sm::substate_set<power_on, blink_green, blink_red>;
-    using all_states = sm::state_set<power_off, power_on>;
-
-    sm::state_machine<all_states> sm;
-    sm.dispatch(ButtonEvent{});
-    sm.dispatch(ButtonEvent{});
+    sm::states<B> states;
+    //states.handle(Ev1{}); // A->B(B1)
+    states.handle(Ev1{}); // B(B1 -> B2)
 }
