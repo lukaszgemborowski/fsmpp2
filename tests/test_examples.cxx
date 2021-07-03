@@ -7,6 +7,10 @@ namespace
 // define events, need to derive from fsmpp2::event base class
 struct SimpleEvent1 : fsmpp2::event {};
 struct SimpleEvent2 : fsmpp2::event {};
+struct SimpleEvent3 : fsmpp2::event {
+    SimpleEvent3(int v) : value {v} {}
+    int value = 0;
+};
 
 struct SingleState : fsmpp2::state<>
 {
@@ -28,9 +32,33 @@ struct StateA : fsmpp2::state<>
     auto handle(SimpleEvent1 const &) {
         return transition<StateB>();
     }
+
+    // this handler can either result in transition to StateB or StateC,
+    // this needs to be denoted in handler return type. It needs to consist
+    // of a list of all posible states the the handler can lead to
+    auto handle(SimpleEvent3 const& e) -> fsmpp2::transitions<StateB, StateC> {
+        if (e.value == 1) {
+            return transition<StateB>();
+        } else if (e.value == 2) {
+            return transition<StateC>();
+        } else {
+            return handled();
+        }
+    }
 };
 
-struct StateB : fsmpp2::state<> {};
+
+struct StateB : fsmpp2::state<> {
+    auto handle(SimpleEvent1 const &) {
+        return transition<StateA>();
+    }
+};
+
+struct StateC : fsmpp2::state<> {
+    auto handle(SimpleEvent1 const &) {
+        return transition<StateA>();
+    }
+};
 
 }
 
@@ -69,4 +97,23 @@ TEST_CASE("Simple transitions between two states", "[example][fsmpp2]")
     // trigger transition to StateB using SimpleEvent1
     sm.handle(SimpleEvent1{});
     REQUIRE(sm.is_in<StateB>());
+}
+
+TEST_CASE("Transition choice", "[example][fsmpp2]")
+{
+    fsmpp2::states<StateA, StateB, StateC> sm;
+
+    REQUIRE(sm.is_in<StateA>());
+
+    // event 3 with value 1 should transit state machine to state B
+    sm.handle(SimpleEvent3{1});
+    REQUIRE(sm.is_in<StateB>());
+
+    // get back to state A with event 1
+    sm.handle(SimpleEvent1{});
+    REQUIRE(sm.is_in<StateA>());
+
+    // event 3 with value 2 should transit state machine to state C
+    sm.handle(SimpleEvent3{2});
+    REQUIRE(sm.is_in<StateC>());
 }
