@@ -1,92 +1,17 @@
-#include <type_traits>
-#include <array>
-#include <iostream>
+#ifndef FSMPP2_FSMPP2_HPP
+#define FSMPP2_FSMPP2_HPP
 
-// framework
-namespace sm
+#include "fsmpp2/meta.hpp"
+#include "fsmpp2/detail.hpp"
+
+namespace fsmpp2
 {
-namespace detail
-{
-
-template<class... T> struct type_list {};
-
-template<class X, class F, class ... T>
-constexpr auto type_list_index(type_list<F, T...>, std::size_t idx = 0)
-{
-    if (std::is_same_v<F, X>) {
-        return idx;
-    } else {
-        if constexpr (sizeof...(T) > 0) {
-            return type_list_index<X>(type_list<T...>{}, idx + 1);
-        } else {
-            return idx + 1;
-        }
-    }
-}
-
-template<std::size_t I, std::size_t Target, class F, class... T>
-struct type_list_type_impl {
-    using type = typename type_list_type_impl<I + 1, Target, T...>::type;
-};
-
-template<std::size_t I, class F, class... T>
-struct type_list_type_impl<I, I, F, T...> {
-    using type = F;
-};
-
-template<std::size_t I, class F, class... T>
-struct type_list_type {};
-
-template<std::size_t I, class F, class... T>
-struct type_list_type<I, type_list<F, T...>> {
-    using type = typename type_list_type_impl<0, I, F, T...>::type;
-};
-
-
-template<class... F>
-constexpr auto type_list_size(type_list<F...>)
-{
-    return sizeof...(F);
-}
-
-template<class X, class F, class ... T>
-constexpr bool type_list_has(type_list<F, T...> l)
-{
-    auto idx = type_list_index<X>(l);
-    return idx < type_list_size(l);
-}
-
-template<class... T>
-constexpr auto storage_for(type_list<T...>)
-{
-    static_assert(sizeof...(T) > 0);
-
-    std::array<std::size_t, sizeof...(T)> arr{sizeof(T)...};
-    return *std::max_element(arr.begin(), arr.end());
-}
-
-// sm specific
-template<class S, class E>
-concept EventHandler = requires(S s, E e) {
-    s.handle(e);
-};
-
-struct handled {};
-struct not_handled {};
-template<class T> struct transition { using type = T; };
-
-struct NullContext {};
-struct NoSubStates {
-    template<class E> auto handle(E const&) { return false; }
-};
-
-} // detail
 
 struct event {};
 
 template<class... S>
 struct transitions {
-    using list = detail::type_list<S...>;
+    using list = meta::type_list<S...>;
     std::size_t idx;
 
     enum class result {
@@ -102,7 +27,7 @@ struct transitions {
 
     template<class U>
     transitions(transitions<U>)
-        : idx {detail::type_list_index<U>(list{})}
+        : idx {meta::type_list_index<U>(list{})}
         , outcome {result::transition}
     {
     }
@@ -148,14 +73,14 @@ struct state_instance
 
 public:
     using context_type = typename state_context_type<States...>::type;
-    using type_list = detail::type_list<States...>;
+    using type_list = meta::type_list<States...>;
 
     template<class State>
     void create() {
-        static_assert(detail::type_list_has<State>(type_list{}), "state is not in set");
+        static_assert(meta::type_list_has<State>(type_list{}), "state is not in set");
 
         new (storage_) State ();
-        index_ = detail::type_list_index<State>(type_list{});
+        index_ = meta::type_list_index<State>(type_list{});
     }
 
     void destroy() {
@@ -182,7 +107,7 @@ private:
     template<std::size_t I, class F>
     void apply_one(bool& executed, F func) {
         if (!executed && I == index_) {
-            using state_type = typename detail::type_list_type<I, type_list>::type;
+            using state_type = typename meta::type_list_type<I, type_list>::type;
             func(reinterpret_cast<state_type *>(storage_));
             executed = true;
         }
@@ -190,7 +115,7 @@ private:
 
 private:
     // TODO: extract storage type to separate class
-    unsigned char storage_[detail::storage_for(detail::type_list<States...>{})];
+    unsigned char storage_[detail::storage_for(meta::type_list<States...>{})];
     std::size_t index_ = sizeof...(States);
     context_type context_;
 };
@@ -199,7 +124,7 @@ template<class First, class... States>
 struct states
 {
 public:
-    using type_list = detail::type_list<First, States...>;
+    using type_list = meta::type_list<First, States...>;
 
     // TODO: verify that all states use the same context_type, otherwise static_assert
     using context_type = typename First::context_type;
@@ -269,9 +194,9 @@ private:
             states_.destroy();
 
             using transition_type_list = typename Transition::list;
-            using type_at_index = typename detail::type_list_type<I, transition_type_list>::type;
+            using type_at_index = typename meta::type_list_type<I, transition_type_list>::type;
 
-            if constexpr (detail::type_list_has<type_at_index>(type_list{})) {
+            if constexpr (meta::type_list_has<type_at_index>(type_list{})) {
                 states_.template create<type_at_index>();
             }
         }
@@ -281,93 +206,6 @@ private:
     state_instance<First, States...> states_;
 };
 
-} // sm
+} // namespace fsmpp2
 
-
-struct Ev1 : sm::event {
-    int value = 0;
-};
-struct Ev2 : sm::event {
-    int value = 0;
-};
-
-class A;
-class B;
-class C;
-
-struct A : sm::state<> {
-    A() {
-        std::cout << "A enter" << std::endl;
-    }
-
-    ~A() {
-        std::cout << "A exit" << std::endl;
-    }
-
-    auto handle(Ev1 const&) -> sm::transitions<B, C>
-    {
-        std::cout << "A::Ev1" << std::endl;
-        return transition<B>();
-    }
-};
-
-struct B1 : sm::state<>
-{
-    B1() {
-        std::cout << "B1" << std::endl;
-    }
-
-    auto handle(Ev1 const&)
-    {
-        std::cout << "B1::Ev1" << std::endl;
-        return handled();
-    }
-};
-
-struct B2 : sm::state<>
-{
-    B2() {
-        std::cout << "B2" << std::endl;
-    }
-};
-
-struct B : sm::state<sm::detail::NullContext, sm::states<B1, B2>> {
-    B() {
-        std::cout << "B enter" << std::endl;
-    }
-
-    ~B() {
-        std::cout << "B exit" << std::endl;
-    }
-
-    auto handle(Ev2 const& e) -> sm::transitions<A, C>
-    {
-        std::cout << "B::Ev2" << std::endl;
-
-        if (e.value == 1) {
-            return transition<A>();
-        } else if (e.value == 2) {
-            return transition<C>();
-        }
-
-        return not_handled();
-    }
-};
-
-struct C : sm::state<> {
-    C() {
-        std::cout << "C enter" << std::endl;
-    }
-
-    ~C() {
-        std::cout << "C exit" << std::endl;
-    }
-};
-
-
-int main()
-{
-    sm::states<B> states;
-    //states.handle(Ev1{}); // A->B(B1)
-    states.handle(Ev1{}); // B(B1 -> B2)
-}
+#endif // FSMPP2_FSMPP2_HPP
