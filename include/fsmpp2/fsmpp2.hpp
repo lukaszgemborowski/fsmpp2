@@ -139,13 +139,11 @@ public:
     // TODO: verify that all states use the same context_type, otherwise static_assert
     using context_type = typename First::context_type;
 
-    states()
-    {
+    states() {
         states_.template create<First>();
     }
 
-    ~states()
-    {
+    ~states() {
         states_.destroy();
     }
 
