@@ -3,6 +3,8 @@
 
 #include "fsmpp2/meta.hpp"
 #include "fsmpp2/detail.hpp"
+#include "fsmpp2/context.hpp"
+#include <variant>
 
 namespace fsmpp2
 {
@@ -75,6 +77,10 @@ public:
     using context_type = typename state_context_type<States...>::type;
     using type_list = meta::type_list<States...>;
 
+    state_instance(context_type& ctx)
+        : context_ {ctx}
+    {}
+
     template<class State>
     void create() {
         static_assert(meta::type_list_has<State>(type_list{}), "state is not in set");
@@ -127,7 +133,7 @@ private:
     // TODO: extract storage type to separate class
     unsigned char storage_[detail::storage_for(meta::type_list<States...>{})];
     std::size_t index_ = sizeof...(States);
-    context_type context_;
+    context_type& context_;
 };
 
 template<class First, class... States>
@@ -139,7 +145,17 @@ public:
     // TODO: verify that all states use the same context_type, otherwise static_assert
     using context_type = typename First::context_type;
 
-    states() {
+    states()
+        : context_ {}
+        , states_ {context_.value()}
+    {
+        states_.template create<First>();
+    }
+
+    states(context_type &ctx)
+        : context_ {ctx}
+        , states_ {context_.value()}
+    {
         states_.template create<First>();
     }
 
@@ -221,6 +237,7 @@ private:
     }
 
 private:
+    detail::context<context_type> context_;
     state_instance<First, States...> states_;
 };
 

@@ -60,6 +60,30 @@ struct StateC : fsmpp2::state<> {
     }
 };
 
+struct Context {
+    int ev1count = 0;
+    int ev2count = 0;
+};
+
+struct StateWithContext : fsmpp2::state<Context>
+{
+    StateWithContext(Context& ctx)
+        : context_ {ctx}
+    {}
+
+    auto handle(SimpleEvent1 const&) {
+        ++ context_.ev1count;
+        return handled();
+    }
+
+    auto handle(SimpleEvent2 const&) {
+        ++ context_.ev2count;
+        return handled();
+    }
+
+    Context& context_;
+};
+
 }
 
 TEST_CASE("Event handling by single state", "[example][fsmpp2]")
