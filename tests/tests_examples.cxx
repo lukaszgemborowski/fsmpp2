@@ -162,3 +162,23 @@ TEST_CASE("Context usage", "[example][fsmpp2]")
     sm.handle(SimpleEvent2{});
     REQUIRE(context.ev2count == 1);
 }
+
+namespace // compile check
+{
+
+struct DecisionEvent : fsmpp2::event {
+    bool handle = false;
+};
+
+struct DecisionHandler : fsmpp2::state<> {
+    auto handle(DecisionEvent const& e) const {
+        // can either return handled() or not_handled()
+        if (e.handle) {
+            return handled();
+        } else {
+            return not_handled();
+        }
+    }
+};
+
+}

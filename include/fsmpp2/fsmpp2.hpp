@@ -34,6 +34,12 @@ struct transitions {
     {
     }
 
+    transitions(transitions<> const& t)
+        : idx {sizeof...(S)}
+        , outcome {t.outcome}
+    {
+    }
+
     transitions(detail::handled)
         : idx {sizeof...(S)}
         , outcome {result::handled}
@@ -43,6 +49,14 @@ struct transitions {
         : idx {sizeof...(S)}
         , outcome {result::not_handled}
     {}
+
+    bool is_transition() const {
+        return outcome == result::transition;
+    }
+
+    bool is_handled() const {
+        return outcome == result::handled;
+    }
 };
 
 template<class Context, class SubStates>
@@ -59,11 +73,11 @@ struct state {
     }
 
     auto not_handled() const {
-        return detail::not_handled{};
+        return transitions<>{detail::not_handled{}};
     }
 
     auto handled() const {
-        return detail::handled{};
+        return transitions<>{detail::handled{}};
     }
 };
 
@@ -212,19 +226,15 @@ private:
         }
     }
 
-    bool handle_result(detail::not_handled) {
-        return false;
-    }
-
-    bool handle_result(detail::handled) {
-        return true;
-    }
-
     template<class... T>
     bool handle_result(transitions<T...> t) {
         // TODO: verify T... are in First,States...
-        handle_transition(t, std::make_index_sequence<sizeof...(T)>{});
-        return true; // assume true
+        if (t.is_transition()) {
+            handle_transition(t, std::make_index_sequence<sizeof...(T)>{});
+            return true;
+        }
+
+        return t.is_handled();
     }
 
     template<class Transition, std::size_t... I>
