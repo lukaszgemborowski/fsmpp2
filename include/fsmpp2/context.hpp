@@ -9,6 +9,12 @@ namespace fsmpp2::detail
 template<class T>
 class context {
 public:
+    context()
+        : instance_ {std::in_place_t{}}
+        , instance_ptr_ {&instance_.value()}
+    {
+    }
+
     template<class... Args>
     context(Args&& ...args)
         : instance_ {std::in_place_t{}, args...}
@@ -20,6 +26,12 @@ public:
         : instance_ptr_ {&ctx}
     {
     }
+
+    // no copy or move
+    context(context<T> const&) = delete;
+    context(context<T> &&) = delete;
+    context<T>& operator=(context<T> const&) = delete;
+    context<T>& operator=(context<T> &&) = delete;
 
     T& value() {
         return *instance_ptr_;

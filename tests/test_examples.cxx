@@ -69,7 +69,8 @@ struct StateWithContext : fsmpp2::state<Context>
 {
     StateWithContext(Context& ctx)
         : context_ {ctx}
-    {}
+    {
+    }
 
     auto handle(SimpleEvent1 const&) {
         ++ context_.ev1count;
@@ -140,4 +141,24 @@ TEST_CASE("Transition choice", "[example][fsmpp2]")
     // event 3 with value 2 should transit state machine to state C
     sm.handle(SimpleEvent3{2});
     REQUIRE(sm.is_in<StateC>());
+}
+
+TEST_CASE("Context usage", "[example][fsmpp2]")
+{
+    Context context;
+
+    // each of the states in a states set needs to declare (by inheriting state<Context>)
+    // the same type of the context that it wants to use. States will forward Context
+    // reference to state constructor
+    fsmpp2::states<StateWithContext> sm{context};
+
+    REQUIRE(sm.is_in<StateWithContext>());
+    REQUIRE(context.ev1count == 0);
+    REQUIRE(context.ev2count == 0);
+
+    sm.handle(SimpleEvent1{});
+    REQUIRE(context.ev1count == 1);
+
+    sm.handle(SimpleEvent2{});
+    REQUIRE(context.ev2count == 1);
 }

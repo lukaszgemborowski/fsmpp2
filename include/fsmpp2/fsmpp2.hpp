@@ -4,7 +4,7 @@
 #include "fsmpp2/meta.hpp"
 #include "fsmpp2/detail.hpp"
 #include "fsmpp2/context.hpp"
-#include <variant>
+#include <concepts>
 
 namespace fsmpp2
 {
@@ -77,15 +77,15 @@ public:
     using context_type = typename state_context_type<States...>::type;
     using type_list = meta::type_list<States...>;
 
-    state_instance(context_type& ctx)
-        : context_ {ctx}
-    {}
-
     template<class State>
-    void create() {
+    void create(context_type &ctx) {
         static_assert(meta::type_list_has<State>(type_list{}), "state is not in set");
 
-        new (storage_) State ();
+        if constexpr (std::constructible_from<State, context_type &>) {
+            new (storage_) State (ctx);
+        } else {
+            new (storage_) State ();
+        }
         index_ = meta::type_list_index<State>(type_list{});
     }
 
@@ -133,7 +133,6 @@ private:
     // TODO: extract storage type to separate class
     unsigned char storage_[detail::storage_for(meta::type_list<States...>{})];
     std::size_t index_ = sizeof...(States);
-    context_type& context_;
 };
 
 template<class First, class... States>
@@ -147,16 +146,16 @@ public:
 
     states()
         : context_ {}
-        , states_ {context_.value()}
+        , states_ {}
     {
-        states_.template create<First>();
+        states_.template create<First>(context_.value());
     }
 
     states(context_type &ctx)
         : context_ {ctx}
-        , states_ {context_.value()}
+        , states_ {}
     {
-        states_.template create<First>();
+        states_.template create<First>(context_.value());
     }
 
     ~states() {
@@ -231,7 +230,7 @@ private:
             using type_at_index = typename meta::type_list_type<I, transition_type_list>::type;
 
             if constexpr (meta::type_list_has<type_at_index>(type_list{})) {
-                states_.template create<type_at_index>();
+                states_.template create<type_at_index>(context_.value());
             }
         }
     }
