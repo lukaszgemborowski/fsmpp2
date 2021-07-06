@@ -1,5 +1,5 @@
 #ifndef FSMPP2_CONTEXT_HPP
-#define FMSPP2_CONTEXT_HPP
+#define FSMPP2_CONTEXT_HPP
 
 #include <optional>
 
