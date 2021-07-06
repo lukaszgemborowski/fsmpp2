@@ -134,7 +134,7 @@ struct StateA : fsmpp2::state<> {
 ```
 so it's clerly visible in the state class interface which event can lead to what transition.
 
-## Nesteds states
+## Nested states
 
 The library supports state hierarchy but this sections is "To be described". For more information see [an example](https://github.com/lukaszgemborowski/fsmpp2/blob/master/tests/tests_example_1.cxx).
 
