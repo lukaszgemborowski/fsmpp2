@@ -5,7 +5,6 @@
 #include "fsmpp2/detail.hpp"
 #include "fsmpp2/context.hpp"
 #include "fsmpp2/config.hpp"
-#include <concepts>
 
 namespace fsmpp2
 {
@@ -100,7 +99,7 @@ public:
 
         new (substate_storage_) typename State::substates_type (ctx);
 
-        if constexpr (std::constructible_from<State, context_type &>) {
+        if constexpr (std::is_constructible_v<State, context_type &>) {
             new (storage_) State (ctx);
         } else {
             new (storage_) State ();

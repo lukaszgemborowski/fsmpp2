@@ -2,6 +2,7 @@
 #define FSMPP2_DETAIL_HPP
 
 #include "fsmpp2/meta.hpp"
+#include <array>
 
 namespace fsmpp2::detail
 {
