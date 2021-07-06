@@ -29,6 +29,21 @@ struct NoSubStates {
     template<class E> auto handle(E const&) { return false; }
 };
 
+template<class Q, class... S>
+struct verify_same_context_type {
+    template<class... X> struct check {};
+
+    template<class X> struct check<X> {
+        static constexpr auto value = std::is_same_v<Q, typename X::context_type>;
+    };
+
+    template<class X, class... T> struct check<X, T...> {
+        static constexpr auto value = check<X>::value ? check<T...>::value : false;
+    };
+
+    static constexpr auto value = check<S...>::value;
+};
+
 } // namespace fsmpp2::detail
 
 #endif // FSMPP2_DETAIL_HPP

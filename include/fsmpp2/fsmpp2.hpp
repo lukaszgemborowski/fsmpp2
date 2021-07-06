@@ -62,6 +62,7 @@ struct state {
         return detail::handled{};
     }
 
+    // TODO: move out to state_instance?
     SubStates substates_;
 };
 
@@ -141,8 +142,12 @@ struct states
 public:
     using type_list = meta::type_list<First, States...>;
 
-    // TODO: verify that all states use the same context_type, otherwise static_assert
     using context_type = typename First::context_type;
+    static_assert(
+        detail::verify_same_context_type<context_type, First, States...>::value,
+        "All states in states set needs to have exactly the same context type, verify"
+        "if you declared all states with the same context"
+    );
 
     states()
         : context_ {}
