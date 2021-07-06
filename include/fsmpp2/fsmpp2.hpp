@@ -4,6 +4,7 @@
 #include "fsmpp2/meta.hpp"
 #include "fsmpp2/detail.hpp"
 #include "fsmpp2/context.hpp"
+#include "fsmpp2/config.hpp"
 #include <concepts>
 
 namespace fsmpp2
