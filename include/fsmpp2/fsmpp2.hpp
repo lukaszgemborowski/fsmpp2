@@ -45,9 +45,13 @@ struct transitions {
     {}
 };
 
+template<class Context, class SubStates>
+class state;
+
 template<class Context = detail::NullContext, class SubStates = detail::NoSubStates>
 struct state {
     using context_type = Context;
+    using substates_type = SubStates;
 
     template<class S>
     auto transition() const {
@@ -61,9 +65,6 @@ struct state {
     auto handled() const {
         return detail::handled{};
     }
-
-    // TODO: move out to state_instance?
-    SubStates substates_;
 };
 
 template<class... States>
@@ -82,6 +83,8 @@ public:
     void create(context_type &ctx) {
         static_assert(meta::type_list_has<State>(type_list{}), "state is not in set");
 
+        new (substate_storage_) typename State::substates_type (ctx);
+
         if constexpr (std::constructible_from<State, context_type &>) {
             new (storage_) State (ctx);
         } else {
@@ -92,8 +95,9 @@ public:
 
     void destroy() {
         apply(
-            [this]<typename T>(T *ptr) {
+            [this]<typename T, typename SS>(T *ptr, SS* substates) {
                 ptr->~T();
+                substates->~SS();
                 index_ = sizeof...(States);
             }
         );
@@ -125,7 +129,8 @@ private:
     void apply_one(bool& executed, F func) {
         if (!executed && I == index_) {
             using state_type = typename meta::type_list_type<I, type_list>::type;
-            func(reinterpret_cast<state_type *>(storage_));
+            using substates_type = typename state_type::substates_type;
+            func(reinterpret_cast<state_type *>(storage_), reinterpret_cast<substates_type *>(substate_storage_));
             executed = true;
         }
     }
@@ -133,6 +138,7 @@ private:
 private:
     // TODO: extract storage type to separate class
     unsigned char storage_[detail::storage_for(meta::type_list<States...>{})];
+    unsigned char substate_storage_[detail::storage_for(meta::type_list<typename States::substates_type...>{})];
     std::size_t index_ = sizeof...(States);
 };
 
@@ -171,7 +177,7 @@ public:
     auto handle(E const& e) {
         auto result = false;
         states_.apply(
-            [this, &e, &result](auto *ptr) { result = handle(*ptr, e); }
+            [this, &e, &result](auto *ptr, auto *ss) { result = handle(*ptr, *ss, e); }
         );
 
         return result;
@@ -188,18 +194,18 @@ public:
     }
 
 private:
-    template<class S, class E>
-    bool handle(S &state, E const& e) requires detail::EventHandler<S, E> {
-        if (!state.substates_.handle(e)) {
+    template<class S, class SubS, class E>
+    bool handle(S &state, SubS &substates, E const& e) requires detail::EventHandler<S, E> {
+        if (!substates.handle(e)) {
             return handle_result(state.handle(e));
         } else {
             return true;
         }
     }
 
-    template<class S, class E>
-    bool handle(S& state, E const& e) {
-        if (state.substates_.handle(e)) {
+    template<class S, class SubS, class E>
+    bool handle(S& state, SubS &substates, E const& e) {
+        if (substates.handle(e)) {
             return true;
         } else {
             return false;

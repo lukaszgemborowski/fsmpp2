@@ -26,6 +26,7 @@ template<class T> struct transition { using type = T; };
 
 struct NullContext {};
 struct NoSubStates {
+    template<class T> NoSubStates(T const&) {}
     template<class E> auto handle(E const&) { return false; }
 };
 
