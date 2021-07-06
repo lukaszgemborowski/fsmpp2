@@ -122,6 +122,18 @@ fsmpp2::states<StateA, StateB, StateC> sm;
 sm.handle(AnEvent{3}); // transits from StateA to StateC
 ```
 
+for the sake of clarity you may opt to declare your event handlers as
+
+```cpp
+struct StateA : fsmpp2::state<> {
+  auto handle(EventA const&) -> fsmpp2::transitions<>;
+  auto handle(EventB const&) -> fsmpp2::transitions<StateB>;
+  auto handle(EventC const&) -> fsmpp2::transitions<StateC>;
+  auto handle(EventD const&) -> fsmpp2::transitions<StateB, StateC, StateD>;
+};
+```
+so it's clerly visible in the state class interface which event can lead to what transition.
+
 ## Hierarchy
 
 To be described. For more information see [an example](https://github.com/lukaszgemborowski/fsmpp2/blob/master/tests/tests_example_1.cxx).
