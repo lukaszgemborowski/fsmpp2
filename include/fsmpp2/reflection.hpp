@@ -119,6 +119,10 @@ private:
         state_description desc;
         desc.name = class_type_name<T>();
         fill_events_information<T, Events...>(desc);
+
+        // check for substates
+        using substate_description = state_machine_description<typename T::substates_type, fsmpp2::meta::type_list<Events...>>;
+        desc.substates = substate_description::get();
         res.push_back(desc);
     }
 

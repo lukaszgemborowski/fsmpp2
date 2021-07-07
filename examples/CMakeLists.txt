@@ -8,3 +8,14 @@ target_link_libraries(
     PRIVATE
     fsmpp2
 )
+
+add_executable(
+    plantuml_microwave
+    plantuml_microwave.cxx
+)
+
+target_link_libraries(
+    plantuml_microwave
+    PRIVATE
+    fsmpp2
+)
