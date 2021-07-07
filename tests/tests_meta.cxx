@@ -28,3 +28,6 @@ static_assert(std::is_same_v<type_list_type<0, list_0>::type, char>, "char at in
 static_assert(std::is_same_v<type_list_type<1, list_0>::type, int>, "int at index 1");
 static_assert(std::is_same_v<type_list_type<2, list_0>::type, float>, "float at index 2");
 // TODO: static_assert(std::is_same_v<type_list_type<3, list_0>::type, double> == ???, "??");
+
+// type_list_first
+static_assert(std::is_same_v<typename type_list_first<list_0>::type, char>, "first type should be char");

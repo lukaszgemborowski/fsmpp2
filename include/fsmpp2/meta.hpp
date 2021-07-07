@@ -58,6 +58,12 @@ constexpr bool type_list_has(type_list<F, T...> l)
     return idx < type_list_size(l);
 }
 
+template<class List> struct type_list_first {};
+template<class First, class... Tail>
+struct type_list_first<type_list<First, Tail...>> {
+    using type = First;
+};
+
 
 } // namespace fsmpp2::meta
 

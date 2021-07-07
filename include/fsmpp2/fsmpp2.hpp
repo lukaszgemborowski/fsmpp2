@@ -62,10 +62,9 @@ struct transitions {
     }
 };
 
-template<class Context, class SubStates>
-class state;
+template<class...> struct states;
 
-template<class Context = detail::NullContext, class SubStates = detail::NoSubStates>
+template<class Context = detail::NullContext, class SubStates = states<>>
 struct state {
     using context_type = Context;
     using substates_type = SubStates;
@@ -159,15 +158,16 @@ private:
     std::size_t index_ = sizeof...(States);
 };
 
-template<class First, class... States>
+template<class... States>
 struct states
 {
 public:
-    using type_list = meta::type_list<First, States...>;
+    using type_list = meta::type_list<States...>;
+    using first_state = typename meta::type_list_first<type_list>::type;
 
-    using context_type = typename First::context_type;
+    using context_type = typename first_state::context_type;
     static_assert(
-        detail::verify_same_context_type<context_type, First, States...>::value,
+        detail::verify_same_context_type<context_type, States...>::value,
         "All states in states set needs to have exactly the same context type, verify"
         "if you declared all states with the same context"
     );
@@ -176,14 +176,14 @@ public:
         : context_ {}
         , states_ {}
     {
-        states_.template create<First>(context_.value());
+        states_.template create<first_state>(context_.value());
     }
 
     states(context_type &ctx)
         : context_ {ctx}
         , states_ {}
     {
-        states_.template create<First>(context_.value());
+        states_.template create<first_state>(context_.value());
     }
 
     ~states() {
@@ -261,7 +261,13 @@ private:
 
 private:
     detail::context<context_type> context_;
-    state_instance<First, States...> states_;
+    state_instance<States...> states_;
+};
+
+template<> struct states<>
+{
+    template<class T> states(T&) {}
+    template<class E> auto handle(E const&) { return false; }
 };
 
 } // namespace fsmpp2
