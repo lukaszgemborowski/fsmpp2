@@ -22,13 +22,13 @@ struct EventHandlingState : fsmpp2::state<> {
 
 }
 
-TEST_CASE("State name", "[reflection]")
+TEST_CASE("State name", "[!nonportable][reflection][class_type_name]")
 {
     auto name = fsmpp2::reflection::class_type_name<StateName>();
     REQUIRE(name == "(anonymous namespace)::StateName");
 }
 
-TEST_CASE("Event handlers return values", "[reflection]")
+TEST_CASE("Event handlers return values", "[!nonportable][reflection][state_handle_result_type]")
 {
     auto handled = fsmpp2::reflection::state_handle_result_type<EventHandlingState, EventA>();
     REQUIRE(handled == "fsmpp2::transitions<>");
@@ -40,13 +40,13 @@ TEST_CASE("Event handlers return values", "[reflection]")
     REQUIRE(ab_transition == "fsmpp2::transitions<(anonymous namespace)::StateA, (anonymous namespace)::StateB>");
 }
 
-TEST_CASE("List of target states", "[reflection]")
+TEST_CASE("List of target states", "[!nonportable][reflection][state_handle_transition_to]")
 {
     auto target = fsmpp2::reflection::state_handle_transition_to<EventHandlingState, EventC>();
     REQUIRE(std::vector<std::string>{"(anonymous namespace)::StateA", "(anonymous namespace)::StateB"} == target);
 }
 
-TEST_CASE("List all states in a set", "[reflection]")
+TEST_CASE("List all states in a set", "[!nonportable][reflection][state_names]")
 {
     using SM = fsmpp2::states<StateName, StateA, StateB>;
     auto all_states = fsmpp2::reflection::state_names<SM>::get();
@@ -58,7 +58,7 @@ TEST_CASE("List all states in a set", "[reflection]")
                     all_states);
 }
 
-TEST_CASE("Describe flat state machine", "[reflection][state_machine_description]")
+TEST_CASE("Describe flat state machine", "[!nonportable][reflection][state_machine_description]")
 {
     using SM = fsmpp2::states<EventHandlingState, StateA, StateB>;
     using Events = fsmpp2::events<EventA, EventB, EventC>;
