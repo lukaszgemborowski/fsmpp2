@@ -213,4 +213,4 @@ note that currently `fsmpp2::events<>` template is used only for that purpose an
 
 # Licence
 
-MIT License, for details see [LICENSE file](https://github.com/lukaszgemborowski/fsmpp2/blob/master/LICENSE).
+GPL-3.0 License, for details see [LICENSE file](LICENSE).
