@@ -11,6 +11,9 @@ namespace fsmpp2
 
 struct event {};
 
+template<class... E>
+using events = meta::type_list<E...>;
+
 template<class... S>
 struct transitions {
     using list = meta::type_list<S...>;
