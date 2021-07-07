@@ -15,7 +15,7 @@ With few minor tweaks the library can be backported to C++17 (mainly replacing c
 
 # Overview
 
-You can start with a more [complex example](https://github.com/lukaszgemborowski/fsmpp2/blob/master/tests/tests_example_1.cxx)
+You can start with a more [complex example](tests/tests_example_1.cxx)
 or/and read through below introduction section.
 
 ## State
@@ -209,7 +209,11 @@ when run and parsed by plantuml produce:
 
 note that currently `fsmpp2::events<>` template is used only for that purpose and is not required for state machine implementation but if you want to have your diagrams you need to define it with all the events handled by state machine.
 
-*TODO*: substates
+Another one, previously linked [microwave example](tests/tests_example_1.cxx) auto-generated example:
+
+![Multi level diagram](examples/plantuml_microwave.png)
+
+
 
 # Licence
 
