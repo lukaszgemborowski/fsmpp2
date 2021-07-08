@@ -36,7 +36,7 @@ struct InnerState : fsmpp2::state<Context>
     Context& ctx_;
 };
 
-struct OuterState : fsmpp2::state<Context, fsmpp2::states<InnerState>>
+struct OuterState : fsmpp2::state<Context, fsmpp2::state_manager<InnerState>>
 {
     OuterState(Context& ctx)
         : ctx_ {ctx}
@@ -62,7 +62,7 @@ struct OuterState : fsmpp2::state<Context, fsmpp2::states<InnerState>>
 TEST_CASE("Outer and inner state creation and event handling", "[states][state][hierarchy]")
 {
     Context context;
-    fsmpp2::states<OuterState> sm{context};
+    fsmpp2::state_manager<OuterState> sm{context};
 
     REQUIRE(context.outerCreated);
     REQUIRE(context.innerCreated);

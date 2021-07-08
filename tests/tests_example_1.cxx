@@ -215,7 +215,7 @@ struct Ready : fsmpp2::state<ContextData> {
 
 // Ready, Microwaving, Paused are substates of PoweredOn, this must be marked explicitly as the
 // second template argument to fsmpp2::state template base class
-struct PoweredOn :  fsmpp2::state<ContextData, fsmpp2::states<Ready, Microwaving, Paused, Opened>> {
+struct PoweredOn :  fsmpp2::state<ContextData, fsmpp2::state_manager<Ready, Microwaving, Paused, Opened>> {
     PoweredOn() {
         std::cout << "PoweredOn state enter" << std::endl;
     }
@@ -235,7 +235,7 @@ struct PoweredOn :  fsmpp2::state<ContextData, fsmpp2::states<Ready, Microwaving
 TEST_CASE("Microwave example", "[.][example][microwave]")
 {
     ContextData context;
-    fsmpp2::states<PoweredOff, PoweredOn> sm{context};
+    fsmpp2::state_manager<PoweredOff, PoweredOn> sm{context};
 
     // microwave is now created
 

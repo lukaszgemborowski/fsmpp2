@@ -63,9 +63,9 @@ struct transitions {
     }
 };
 
-template<class...> struct states;
+template<class...> struct state_manager;
 
-template<class Context = detail::NullContext, class SubStates = states<>>
+template<class Context = detail::NullContext, class SubStates = state_manager<>>
 struct state {
     using context_type = Context;
     using substates_type = SubStates;
@@ -85,7 +85,7 @@ struct state {
 };
 
 template<class... States>
-struct states
+struct state_manager
 {
 public:
     using type_list = meta::type_list<States...>;
@@ -98,21 +98,21 @@ public:
         "if you declared all states with the same context"
     );
 
-    states()
+    state_manager()
         : context_ {}
         , states_ {}
     {
         states_.template create<first_state>(context_.value());
     }
 
-    states(context_type &ctx)
+    state_manager(context_type &ctx)
         : context_ {ctx}
         , states_ {}
     {
         states_.template create<first_state>(context_.value());
     }
 
-    ~states() {
+    ~state_manager() {
         states_.destroy();
     }
 
@@ -190,9 +190,9 @@ private:
     detail::single_state_instance<States...> states_;
 };
 
-template<> struct states<>
+template<> struct state_manager<>
 {
-    template<class T> states(T&) {}
+    template<class T> state_manager(T&) {}
     template<class E> auto handle(E const&) { return false; }
 };
 

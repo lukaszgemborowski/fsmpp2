@@ -48,7 +48,7 @@ TEST_CASE("List of target states", "[!nonportable][reflection][state_handle_tran
 
 TEST_CASE("List all states in a set", "[!nonportable][reflection][state_names]")
 {
-    using SM = fsmpp2::states<StateName, StateA, StateB>;
+    using SM = fsmpp2::state_manager<StateName, StateA, StateB>;
     auto all_states = fsmpp2::reflection::state_names<SM>::get();
 
     REQUIRE(std::vector<std::string>{
@@ -60,7 +60,7 @@ TEST_CASE("List all states in a set", "[!nonportable][reflection][state_names]")
 
 TEST_CASE("Describe flat state machine", "[!nonportable][reflection][state_machine_description]")
 {
-    using SM = fsmpp2::states<EventHandlingState, StateA, StateB>;
+    using SM = fsmpp2::state_manager<EventHandlingState, StateA, StateB>;
     using Events = fsmpp2::events<EventA, EventB, EventC>;
     using Description = fsmpp2::reflection::state_machine_description<SM, Events>;
 

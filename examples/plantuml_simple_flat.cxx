@@ -54,7 +54,7 @@ struct F : fsmpp2::state<EmptyContext> {};
 
 int main()
 {
-    using SM = fsmpp2::states<states::A, states::B, states::C, states::D, states::E, states::F>;
+    using SM = fsmpp2::state_manager<states::A, states::B, states::C, states::D, states::E, states::F>;
     using Events = fsmpp2::events<events::Ev1, events::Ev2, events::Ev3>;
     
     fsmpp2::plantuml::print_state_diagram<SM, Events>(std::cout);
