@@ -231,10 +231,76 @@ struct PoweredOn :  fsmpp2::state<fsmpp2::states<Ready, Microwaving, Paused, Ope
 
 }
 
+template<class SM>
+bool read_input(SM &sm)
+{
+    std::string input;
+    std::cout << "> ";
+    std::cin >> input;
+
+    if (input == "?" || input == "help") {
+        std::cout << "PowerButtonPressed, DoorOpen, DoorClose, StartStopButtonPressed, SetTimer, TimeElapsed" << std::endl;
+        return true;
+    }
+
+    if (input == "exit") {
+        return false;
+    }
+
+    if (input == "PowerButtonPressed") {
+        sm.dispatch(sm::PowerButtonPressed{});
+    }
+
+    if (input == "DoorOpen") {
+        sm.dispatch(sm::DoorOpen{});
+    }
+
+    if (input == "DoorClose") {
+        sm.dispatch(sm::DoorClose{});
+    }
+
+    if (input == "StartStopButtonPressed") {
+        sm.dispatch(sm::StartStopButtonPressed{});
+    }
+
+    if (input == "SetTimer") {
+        int seconds = 0;
+        std::cin >> seconds;
+        sm.dispatch(sm::SetTimer{std::chrono::seconds{seconds}});
+    }
+
+    if (input == "TimeElapsed") {
+        int seconds = 0;
+        std::cin >> seconds;
+        sm.dispatch(sm::TimeElapsed{std::chrono::seconds{seconds}});
+    }
+
+    return true;
+}
+
 int main(int argc, char **argv)
 {
-    using StateMachine = fsmpp2::states<sm::PoweredOff, sm::PoweredOn>;
-    using Events = fsmpp2::events<sm::PowerButtonPressed, sm::DoorOpen, sm::DoorClose, sm::StartStopButtonPressed, sm::SetTimer, sm::TimeElapsed>;
+    using States = fsmpp2::states<
+        sm::PoweredOff,
+        sm::PoweredOn
+    >;
 
-    fsmpp2::plantuml::print_state_diagram<StateMachine, Events>(std::cout);
+    using Events = fsmpp2::events<
+        sm::PowerButtonPressed,
+        sm::DoorOpen,
+        sm::DoorClose,
+        sm::StartStopButtonPressed,
+        sm::SetTimer,
+        sm::TimeElapsed
+    >;
+
+    if (argc == 2 && argv[1] == std::string{"uml"}) {
+        fsmpp2::plantuml::print_state_diagram<States, Events>(std::cout);
+    } else {
+        sm::ContextData ctx;
+        fsmpp2::state_machine<States, Events, sm::ContextData> sm{ctx};
+
+        while (read_input(sm))
+            ;
+    }
 }
