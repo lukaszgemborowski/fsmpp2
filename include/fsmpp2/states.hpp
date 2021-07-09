@@ -18,9 +18,9 @@ struct states {
     static constexpr auto count = meta::type_list_size(type_list{});
 };
 
-template<class SubStates = states<>>
+template<class... SubStates>
 struct state {
-    using substates_type = SubStates;
+    using substates_type = states<SubStates...>;
 
     template<class S>
     auto transition() const {

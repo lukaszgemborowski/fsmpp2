@@ -99,7 +99,7 @@ struct InnerState : fsmpp2::state<>
     }
 };
 
-struct OuterState : fsmpp2::state<fsmpp2::states<InnerState>>
+struct OuterState : fsmpp2::state<InnerState>
 {
     InnerOuterCtx& ctx;
     OuterState(InnerOuterCtx& ctx) : ctx{ctx}

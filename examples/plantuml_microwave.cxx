@@ -210,8 +210,8 @@ struct Ready : fsmpp2::state<> {
 };
 
 // Ready, Microwaving, Paused are substates of PoweredOn, this must be marked explicitly as the
-// template argument to fsmpp2::state template base class
-struct PoweredOn :  fsmpp2::state<fsmpp2::states<Ready, Microwaving, Paused, Opened>> {
+// template arguments of fsmpp2::state template base class
+struct PoweredOn :  fsmpp2::state<Ready, Microwaving, Paused, Opened> {
     PoweredOn() {
         std::cout << "PoweredOn state enter" << std::endl;
     }
