@@ -5,6 +5,7 @@
 #include "fsmpp2/detail/single_state_instance.hpp"
 #include "fsmpp2/context.hpp"
 #include "fsmpp2/transitions.hpp"
+#include "fsmpp2/states.hpp"
 
 namespace fsmpp2
 {
