@@ -4,9 +4,20 @@
 namespace
 {
 
-struct EmptyContext {};
+struct AContext {
+    int shared_value = 0;
+};
+
 struct Ev1 : fsmpp2::event {};
 struct Ev2 : fsmpp2::event {};
+struct Ev3 : fsmpp2::event {};
+
+struct StateB : fsmpp2::state<> {
+    StateB(AContext &ctx)
+    {
+        ctx.shared_value = 42;
+    }
+};
 
 struct StateA : fsmpp2::state<> {
     auto handle(Ev1 const&) {
@@ -14,27 +25,48 @@ struct StateA : fsmpp2::state<> {
         return handled();
     }
 
+    auto handle(Ev3 const&) const {
+        return transition<StateB>();
+    }
+
     bool eventHandled = false;
 };
 
 }
 
-TEST_CASE("Single state manager", "[state_manager]")
+TEST_CASE("State manager basic operations", "[state_manager]")
 {
-    fsmpp2::state_manager<fsmpp2::states<StateA>, EmptyContext> sm;
+    AContext ctx;
+    fsmpp2::state_manager<fsmpp2::states<StateA, StateB>, AContext> sm{ctx};
 
     REQUIRE(sm.is_in<StateA>() == false);
 
     sm.enter<StateA>();
     REQUIRE(sm.is_in<StateA>() == true);
+    REQUIRE(sm.is_in<StateB>() == false);
 
     SECTION("Leaving a state") {
         sm.exit();
         CHECK(sm.is_in<StateA>() == false);
+        CHECK(sm.is_in<StateB>() == false);
     }
 
-    SECTION("Handling an event") {
+    SECTION("Handling an non-transition event") {
         CHECK(sm.dispatch(Ev1{}));
         CHECK(sm.state<StateA>().eventHandled);
+        CHECK(sm.is_in<StateA>() == true);
+    }
+
+    SECTION("Dispatching non handled event") {
+        CHECK(sm.dispatch(Ev2{}) == false);
+        CHECK(sm.state<StateA>().eventHandled == false);
+        CHECK(sm.is_in<StateA>() == true);
+    }
+
+    SECTION("State transition") {
+        CHECK(ctx.shared_value == 0);
+        CHECK(sm.dispatch(Ev3{}));
+        CHECK(ctx.shared_value == 42);
+        CHECK(sm.is_in<StateB>());
     }
 }

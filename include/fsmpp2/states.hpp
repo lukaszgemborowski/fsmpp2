@@ -17,9 +17,8 @@ struct states {
     static constexpr auto count = meta::type_list_size(type_list{});
 };
 
-template<class Context = detail::NullContext, class SubStates = states<>>
+template<class SubStates = states<>>
 struct state {
-    using context_type = Context;
     using substates_type = SubStates;
 
     template<class S>

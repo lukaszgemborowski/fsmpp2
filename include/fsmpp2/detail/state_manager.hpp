@@ -26,10 +26,20 @@ public:
     {
     }
 
+    state_manager(Context &ctx)
+        : context_ {ctx}
+    {
+    }
+
     template<class T>
     void enter() {
         states_.template emplace<std::monostate>();
-        states_.template emplace<T>();
+
+        if constexpr (std::is_constructible_v<T, Context &>) {
+            states_.template emplace<T>(context_.value());
+        } else {
+            states_.template emplace<T>();
+        }
     }
 
     void exit() {
@@ -92,13 +102,11 @@ private:
     template<std::size_t I, class Transition>
     void handle_transition_impl(Transition trans) {
         if (trans.idx == I) {
-            states_.destroy();
-
             using transition_type_list = typename Transition::list;
             using type_at_index = typename meta::type_list_type<I, transition_type_list>::type;
 
             if constexpr (meta::type_list_has<type_at_index>(type_list{})) {
-                states_.template create<type_at_index>(context_.value());
+                enter<type_at_index>();
             }
         }
     }
