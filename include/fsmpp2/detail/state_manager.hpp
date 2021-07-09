@@ -6,7 +6,7 @@
 #include "fsmpp2/states.hpp"
 #include <variant>
 
-namespace fsmpp2
+namespace fsmpp2::detail
 {
 
 /**
@@ -158,6 +158,6 @@ private:
     substates_manager_variant   substates_;
 };
 
-} // namespace fsmpp2
+} // namespace fsmpp2::detail
 
 #endif // FSMPP2_DETAIL_STATE_MANAGER_HPP

@@ -37,7 +37,7 @@ struct StateA : fsmpp2::state<> {
 TEST_CASE("State manager basic operations", "[state_manager]")
 {
     AContext ctx;
-    fsmpp2::state_manager<fsmpp2::states<StateA, StateB>, AContext> sm{ctx};
+    fsmpp2::detail::state_manager<fsmpp2::states<StateA, StateB>, AContext> sm{ctx};
 
     REQUIRE(sm.is_in<StateA>() == true);
     REQUIRE(sm.is_in<StateB>() == false);
@@ -122,7 +122,7 @@ struct OuterState : fsmpp2::state<fsmpp2::states<InnerState>>
 TEST_CASE("State manager substate", "[state_manager]")
 {
     InnerOuterCtx ctx;
-    fsmpp2::state_manager<fsmpp2::states<OuterState>, InnerOuterCtx> sm{ctx};
+    fsmpp2::detail::state_manager<fsmpp2::states<OuterState>, InnerOuterCtx> sm{ctx};
 
     CHECK(ctx.innerConstructed);
     CHECK(ctx.outerConstructed);
