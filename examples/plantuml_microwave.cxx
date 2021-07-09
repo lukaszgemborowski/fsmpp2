@@ -59,10 +59,7 @@ struct Opened;
 struct Microwaving;
 struct Ready;
 
-// Each event needs to to inherit from fsmpp2::state template, first template
-// argument is the common Context data that is shared among all the state, if
-// you use that Context type in one of the state you need to use it consistently
-// in any other state in the same state machine
+// Each event needs to to inherit from fsmpp2::state template
 struct PoweredOff : fsmpp2::state<> {
     // Constructors are "state enter" indicators, when state machine transits
     // from one state to another it destructs the old state and creates new one.
@@ -213,7 +210,7 @@ struct Ready : fsmpp2::state<> {
 };
 
 // Ready, Microwaving, Paused are substates of PoweredOn, this must be marked explicitly as the
-// second template argument to fsmpp2::state template base class
+// template argument to fsmpp2::state template base class
 struct PoweredOn :  fsmpp2::state<fsmpp2::states<Ready, Microwaving, Paused, Opened>> {
     PoweredOn() {
         std::cout << "PoweredOn state enter" << std::endl;
