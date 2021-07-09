@@ -16,6 +16,12 @@ public:
     {
     }
 
+    state_machine(Context& ctx)
+        : context_ {ctx}
+        , manager_ {context_}
+    {
+    }
+
     state_machine(States, Events, Context&& ctx)
         : context_ {ctx}
         , manager_ {context_}
