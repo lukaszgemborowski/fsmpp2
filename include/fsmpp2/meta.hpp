@@ -78,6 +78,11 @@ struct type_list_rename<type_list<T...>, F> {
     using result = F<T...>;
 };
 
+template<class, class> struct type_list_push_front;
+template<class... E, class T> struct type_list_push_front<type_list<E...>, T> {
+    using result = type_list<T, E...>;
+};
+
 } // namespace fsmpp2::meta
 
 #endif // FSMPP2_META_HPP

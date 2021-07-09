@@ -23,8 +23,17 @@ private:
 public:
     state_manager()
         : context_ {}
-        , states_ {std::in_place_type_t<first_state>{}}
     {
+    }
+
+    template<class T>
+    void enter() {
+        states_.template emplace<std::monostate>();
+        states_.template emplace<T>();
+    }
+
+    void exit() {
+        states_.template emplace<std::monostate>();
     }
 
     template<class E>
@@ -39,7 +48,7 @@ public:
 
     template<class S>
     bool is_in() const {
-        return states_.template is_in<S>();
+        return std::holds_alternative<S>(states_);
     }
 
     template<class S>
@@ -97,7 +106,11 @@ private:
     }
 
 private:
-    using states_variant = typename meta::type_list_rename<type_list, std::variant>::result;
+    // determine type of variant<empty_states, States...>
+    using states_variant_list = typename meta::type_list_push_front<type_list, std::monostate>::result;
+    using states_variant = typename meta::type_list_rename<states_variant_list, std::variant>::result;
+
+    // determine type of variant<state_manager<States>...>
     template<class T> struct get_substate_manager_type {
         using type = state_manager<typename T::substates_type, Context>;
     };
