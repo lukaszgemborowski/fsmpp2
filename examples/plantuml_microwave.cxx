@@ -1,6 +1,7 @@
 #include <iostream>
 #include <chrono>
 #include "fsmpp2/plantuml.hpp"
+#include "fsmpp2/state_machine.hpp"
 
 namespace sm
 {
@@ -62,7 +63,7 @@ struct Ready;
 // argument is the common Context data that is shared among all the state, if
 // you use that Context type in one of the state you need to use it consistently
 // in any other state in the same state machine
-struct PoweredOff : fsmpp2::state<ContextData> {
+struct PoweredOff : fsmpp2::state<> {
     // Constructors are "state enter" indicators, when state machine transits
     // from one state to another it destructs the old state and creates new one.
     // Note: There's no dynamic allocation here as required space is statically
@@ -88,7 +89,7 @@ struct PoweredOff : fsmpp2::state<ContextData> {
     }
 };
 
-struct Opened : fsmpp2::state<ContextData> {
+struct Opened : fsmpp2::state<> {
     Opened() {
         std::cout << "Opened state enter" << std::endl;
     }
@@ -104,7 +105,7 @@ struct Opened : fsmpp2::state<ContextData> {
     }
 };
 
-struct Paused : fsmpp2::state<ContextData> {
+struct Paused : fsmpp2::state<> {
     Paused() {
         std::cout << "Paused state enter" << std::endl;
     }
@@ -120,7 +121,7 @@ struct Paused : fsmpp2::state<ContextData> {
     }
 };
 
-struct Microwaving : fsmpp2::state<ContextData> {
+struct Microwaving : fsmpp2::state<> {
     // if the constructor accepts a single argument of Context type reference,
     // state machine will automatically provide a reference to the current Context
     Microwaving(ContextData &ctx)
@@ -169,7 +170,7 @@ struct Microwaving : fsmpp2::state<ContextData> {
     ContextData& ctx_;
 };
 
-struct Ready : fsmpp2::state<ContextData> {
+struct Ready : fsmpp2::state<> {
     Ready(ContextData &ctx)
         : ctx_ {ctx}
     {
@@ -213,7 +214,7 @@ struct Ready : fsmpp2::state<ContextData> {
 
 // Ready, Microwaving, Paused are substates of PoweredOn, this must be marked explicitly as the
 // second template argument to fsmpp2::state template base class
-struct PoweredOn :  fsmpp2::state<ContextData, fsmpp2::state_manager<Ready, Microwaving, Paused, Opened>> {
+struct PoweredOn :  fsmpp2::state<fsmpp2::states<Ready, Microwaving, Paused, Opened>> {
     PoweredOn() {
         std::cout << "PoweredOn state enter" << std::endl;
     }
@@ -230,9 +231,9 @@ struct PoweredOn :  fsmpp2::state<ContextData, fsmpp2::state_manager<Ready, Micr
 
 }
 
-int main()
+int main(int argc, char **argv)
 {
-    using StateMachine = fsmpp2::state_manager<sm::PoweredOff, sm::PoweredOn>;
+    using StateMachine = fsmpp2::states<sm::PoweredOff, sm::PoweredOn>;
     using Events = fsmpp2::events<sm::PowerButtonPressed, sm::DoorOpen, sm::DoorClose, sm::StartStopButtonPressed, sm::SetTimer, sm::TimeElapsed>;
 
     fsmpp2::plantuml::print_state_diagram<StateMachine, Events>(std::cout);

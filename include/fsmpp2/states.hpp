@@ -2,6 +2,7 @@
 #define FSMPP2_STATES_HPP
 
 #include "fsmpp2/meta.hpp"
+#include "fsmpp2/transitions.hpp"
 
 namespace fsmpp2
 {

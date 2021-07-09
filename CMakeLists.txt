@@ -6,4 +6,4 @@ target_include_directories(fsmpp2 INTERFACE ${CMAKE_SOURCE_DIR}/include)
 target_compile_features(fsmpp2 INTERFACE cxx_std_20)
 
 add_subdirectory(tests)
-#add_subdirectory(examples)
+add_subdirectory(examples)
