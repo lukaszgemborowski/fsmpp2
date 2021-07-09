@@ -63,7 +63,7 @@ auto state_handle_transition_to()
 
 // couldn't partially specialize a function, workaround by using a struct template
 template<class StatesSet> struct state_names;
-template<class... States> struct state_names<fsmpp2::state_manager<States...>>
+template<class... States> struct state_names<fsmpp2::states<States...>>
 {
     static auto get() {
         return get<States...>();
@@ -100,7 +100,7 @@ template<class StateMachine, class EventList>
 struct state_machine_description;
 
 template<class... States, class... Events>
-struct state_machine_description<fsmpp2::state_manager<States...>, fsmpp2::meta::type_list<Events...>>
+struct state_machine_description<fsmpp2::states<States...>, fsmpp2::meta::type_list<Events...>>
 {
     static auto get() {
         std::vector<state_description> result;
