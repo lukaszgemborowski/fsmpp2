@@ -2,6 +2,7 @@
 #define FSMPP2_STATE_MACHINE_HPP
 
 #include "fsmpp2/detail/state_manager.hpp"
+#include "fsmpp2/contexts.hpp"
 
 namespace fsmpp2
 {
