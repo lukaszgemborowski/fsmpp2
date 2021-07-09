@@ -61,6 +61,66 @@ struct A_State : fsmpp2::state<> {
 }
 ```
 
+### Context declaration
+
+To pass a context down to state machine state you need to declare it in state_machine template. There are two ways of doing that, explicitly parametrize the template:
+
+```cpp
+using States = fsmpp2::states<StateA, StateB>;
+using Events = fsmpp2::events<Ev1>;
+
+Context ctx;
+fsmpp2::state_machine<States, Events, Context> sm{ctx};
+
+// or, to instantiate Context within state_machine template itself, omit the reference argument
+
+fsmpp2::state_machine<States, Events, Context> sm;
+```
+
+or rely on CTAD:
+
+```cpp
+using States = fsmpp2::states<StateA, StateB>;
+using Events = fsmpp2::events<Ev1>;
+
+Context ctx;
+fsmpp2::state_machine sm{States{}, Events{}, ctx};
+```
+
+### Multiple contexts
+
+In case you need different type of contexts in different states you can declare a set of contexts:
+
+```cpp
+struct CtxA { bool value = false; };
+struct CtxB { bool value = false; };
+
+struct CtxStateB : fsmpp2::state<>
+{
+    CtxStateB(CtxB &ctx) {
+        ctx.value = true;
+    }
+};
+
+struct CtxStateA : fsmpp2::state<>
+{
+    CtxStateA(CtxA &ctx) {
+        ctx.value = true;
+    }
+
+    auto handle(Ev1) { return transition<CtxStateB>(); }
+};
+
+CtxA ctx_a;
+CtxB ctx_b;
+
+fsmpp2::state_machine sm {
+    fsmpp2::states<CtxStateA, CtxStateB>{},
+    fsmpp2::events<Ev1>{},
+    fsmpp2::contexts{ctx_a, ctx_b}
+};
+```
+
 ## State machine
 
 "State machine" is simply a set of states, events and a context
