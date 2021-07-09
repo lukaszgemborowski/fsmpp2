@@ -2,7 +2,6 @@
 #define FSMPP2_DETAIL_STATE_MANAGER_HPP
 
 #include "fsmpp2/meta.hpp"
-#include "fsmpp2/context.hpp"
 #include "fsmpp2/transitions.hpp"
 #include "fsmpp2/states.hpp"
 #include <variant>
@@ -20,12 +19,6 @@ private:
     using type_list = typename States::type_list;
 
 public:
-    state_manager()
-        : context_ {}
-    {
-        enter_first();
-    }
-
     state_manager(Context &ctx)
         : context_ {ctx}
     {
@@ -42,11 +35,11 @@ public:
 
         // create substate manager
         constexpr auto Index = meta::type_list_index<T>(type_list{});
-        substates_.template emplace<1 + Index>(context_.value());
+        substates_.template emplace<1 + Index>(context_);
 
         // construct state
         if constexpr (std::is_constructible_v<T, Context &>) {
-            states_.template emplace<T>(context_.value());
+            states_.template emplace<T>(context_);
         } else {
             states_.template emplace<T>();
         }
@@ -160,7 +153,7 @@ private:
         substates_manager_list_fin,
         std::variant>::result;
 
-    detail::context<Context>    context_;
+    Context&                    context_;
     states_variant              states_;
     substates_manager_variant   substates_;
 };
