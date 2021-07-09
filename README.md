@@ -15,7 +15,7 @@ With few minor tweaks the library can be backported to C++17 (mainly replacing c
 
 # Overview
 
-You can start with a more [complex example](tests/tests_example_1.cxx)
+You can start with a more [complex example](examples/plantuml_microwave.cxx)
 or/and read through below introduction section.
 
 ## State
@@ -43,39 +43,43 @@ struct A_State : fsmpp2::state<> {
 ## State context
 
 While states are short living objects and the user have little to no control over how they are managed it is possible to pass a custom object reference (Context)
-to each state's constructor while it's created. The actual context type is denoted as the first state<> template argument:
+to each state's constructor while it's created. Context type is defined while declaring state machine.
 
 ```cpp
 struct CustomContext {};
-struct A_State : fsmpp2::state<CustomContext> {
+struct A_State : fsmpp2::state<> {
   A_State(CustomContext &) {}
 }
 ```
 
-It is important to note, that every state in state machine have to use exactly the same type of context type. If it's not used user may provide a constructor that does
-not accept Context as its argument (or leave the default constructor)
+It is important to note, that every state in state machine have to use exactly the same type of context type. If it's not used in particular state,
+user may provide a constructor that does not accept it as its argument.
 
 ```cpp
-struct CustomContext {};
-struct A_State : fsmpp2::state<CustomContext> {
+struct A_State : fsmpp2::state<> {
   A_State() = default; // still valid, this state does not reference a global context
 }
 ```
 
 ## State machine
 
-"State machine" is simply a set of states
+"State machine" is simply a set of states, events and a context
 
 ```cpp
 struct StateA;
 struct StateB;
 struct StateC;
 
-fsmpp2::states<StateA, StateB, StateC> sm;
-// or
-CustomContext ctx;
-fsmpp2::states<StateA, StateB, StateC> sm{ctx};
-// if context is defined for states
+struct Ev1;
+struct Ev2;
+
+struct CommonContext;
+
+using States = fsmpp2::states<StateA, StateB, StateC>;
+using Events = fsmpp2::events<Ev1, Ev2>;
+
+CommonContext ctx;
+fsmpp2::state_machine<States, Events, CommonContext> sm{ctx};
 ```
 
 by default, SM enters the first state on the list, in this case `StateA`.
@@ -85,8 +89,8 @@ by default, SM enters the first state on the list, in this case `StateA`.
 Event passing is done by calling handle() method on SM object:
 
 ```cpp
-fsmpp2::states<StateA, StateB, StateC> sm;
-sm.handle(AnEvent{});
+fsmpp2::state_machine<...> sm;
+sm.dispatch(AnEvent{});
 ```
 
 ## State transitions
@@ -100,8 +104,8 @@ struct StateA : fsmpp2::state<> {
   }
 };
 // ...
-fsmpp2::states<StateA, StateB, StateC> sm;
-sm.handle(AnEvent{}); // transits from StateA to StateB
+fsmpp2::state_machine<fsmpp2::states<StateA, StateB, StateC>, fsmpp2::events<AnEvent>, Context> sm;
+sm.dispatch(AnEvent{}); // transits from StateA to StateB
 ```
 
 If there are multiple `return` paths, return value needs to be explicitly stated (as there's no way to auto-deduce it).
@@ -118,8 +122,8 @@ struct StateA : fsmpp2::state<> {
   }
 };
 // ...
-fsmpp2::states<StateA, StateB, StateC> sm;
-sm.handle(AnEvent{3}); // transits from StateA to StateC
+fsmpp2::state_machine<fsmpp2::states<StateA, StateB, StateC>, fsmpp2::events<AnEvent>, Context> sm;
+sm.dispatch(AnEvent{3}); // transits from StateA to StateC
 ```
 
 for the sake of clarity you may opt to declare your event handlers as
@@ -136,7 +140,7 @@ so it's clerly visible in the state class interface which event can lead to what
 
 ## Nested states
 
-The library supports state hierarchy but this sections is "To be described". For more information see [an example](https://github.com/lukaszgemborowski/fsmpp2/blob/master/tests/tests_example_1.cxx).
+The library supports state hierarchy but this sections is "To be described". For more information see [an example](examples/plantuml_microwave.cxx).
 
 ## PlantUML diagrams
 
@@ -154,7 +158,6 @@ struct Ev3 : fsmpp2::event {};
 
 namespace states
 {
-struct EmptyContext {};
 
 struct A;
 struct B;
@@ -163,43 +166,43 @@ struct D;
 struct E;
 struct F;
 
-struct A : fsmpp2::state<EmptyContext>
+struct A : fsmpp2::state<>
 {
     auto handle(events::Ev1 const&) -> fsmpp2::transitions<B>;
 };
 
-struct B : fsmpp2::state<EmptyContext>
+struct B : fsmpp2::state<>
 {
     auto handle(events::Ev1 const&) -> fsmpp2::transitions<C>;
     auto handle(events::Ev2 const&) -> fsmpp2::transitions<A>;
 };
 
-struct C : fsmpp2::state<EmptyContext>
+struct C : fsmpp2::state<>
 {
     auto handle(events::Ev1 const&) -> fsmpp2::transitions<A, D>;
     auto handle(events::Ev2 const&) -> fsmpp2::transitions<F>;
 };
 
-struct D : fsmpp2::state<EmptyContext>
+struct D : fsmpp2::state<>
 {
     auto handle(events::Ev3 const&) -> fsmpp2::transitions<E>;
 };
 
-struct E : fsmpp2::state<EmptyContext>
+struct E : fsmpp2::state<>
 {
     auto handle(events::Ev3 const&) -> fsmpp2::transitions<F>;
 };
 
-struct F : fsmpp2::state<EmptyContext> {};
+struct F : fsmpp2::state<> {};
 
 } // namespace states
 
 int main()
 {
-    using SM = fsmpp2::states<states::A, states::B, states::C, states::D, states::E, states::F>;
+    using States = fsmpp2::states<states::A, states::B, states::C, states::D, states::E, states::F>;
     using Events = fsmpp2::events<events::Ev1, events::Ev2, events::Ev3>;
     
-    fsmpp2::plantuml::print_state_diagram<SM, Events>(std::cout);
+    fsmpp2::plantuml::print_state_diagram<States, Events>(std::cout);
 }
 ```
 
@@ -207,9 +210,7 @@ when run and parsed by plantuml produce:
 
 ![State diagram](examples/plantuml_simple_flat.png)
 
-note that currently `fsmpp2::events<>` template is used only for that purpose and is not required for state machine implementation but if you want to have your diagrams you need to define it with all the events handled by state machine.
-
-Another one, previously linked [microwave example](tests/tests_example_1.cxx) auto-generated example:
+Another one, previously linked [microwave example](examples/plantuml_microwave.cxx) auto-generated example:
 
 ![Multi level diagram](examples/plantuml_microwave.png)
 

@@ -1,6 +1,7 @@
 #include <iostream>
 #include <chrono>
 #include "fsmpp2/plantuml.hpp"
+#include "fsmpp2/state_machine.hpp"
 
 namespace sm
 {
@@ -58,11 +59,8 @@ struct Opened;
 struct Microwaving;
 struct Ready;
 
-// Each event needs to to inherit from fsmpp2::state template, first template
-// argument is the common Context data that is shared among all the state, if
-// you use that Context type in one of the state you need to use it consistently
-// in any other state in the same state machine
-struct PoweredOff : fsmpp2::state<ContextData> {
+// Each event needs to to inherit from fsmpp2::state template
+struct PoweredOff : fsmpp2::state<> {
     // Constructors are "state enter" indicators, when state machine transits
     // from one state to another it destructs the old state and creates new one.
     // Note: There's no dynamic allocation here as required space is statically
@@ -88,7 +86,7 @@ struct PoweredOff : fsmpp2::state<ContextData> {
     }
 };
 
-struct Opened : fsmpp2::state<ContextData> {
+struct Opened : fsmpp2::state<> {
     Opened() {
         std::cout << "Opened state enter" << std::endl;
     }
@@ -104,7 +102,7 @@ struct Opened : fsmpp2::state<ContextData> {
     }
 };
 
-struct Paused : fsmpp2::state<ContextData> {
+struct Paused : fsmpp2::state<> {
     Paused() {
         std::cout << "Paused state enter" << std::endl;
     }
@@ -120,7 +118,7 @@ struct Paused : fsmpp2::state<ContextData> {
     }
 };
 
-struct Microwaving : fsmpp2::state<ContextData> {
+struct Microwaving : fsmpp2::state<> {
     // if the constructor accepts a single argument of Context type reference,
     // state machine will automatically provide a reference to the current Context
     Microwaving(ContextData &ctx)
@@ -169,7 +167,7 @@ struct Microwaving : fsmpp2::state<ContextData> {
     ContextData& ctx_;
 };
 
-struct Ready : fsmpp2::state<ContextData> {
+struct Ready : fsmpp2::state<> {
     Ready(ContextData &ctx)
         : ctx_ {ctx}
     {
@@ -212,8 +210,8 @@ struct Ready : fsmpp2::state<ContextData> {
 };
 
 // Ready, Microwaving, Paused are substates of PoweredOn, this must be marked explicitly as the
-// second template argument to fsmpp2::state template base class
-struct PoweredOn :  fsmpp2::state<ContextData, fsmpp2::states<Ready, Microwaving, Paused, Opened>> {
+// template arguments of fsmpp2::state template base class
+struct PoweredOn :  fsmpp2::state<Ready, Microwaving, Paused, Opened> {
     PoweredOn() {
         std::cout << "PoweredOn state enter" << std::endl;
     }
@@ -230,10 +228,76 @@ struct PoweredOn :  fsmpp2::state<ContextData, fsmpp2::states<Ready, Microwaving
 
 }
 
-int main()
+template<class SM>
+bool read_input(SM &sm)
 {
-    using StateMachine = fsmpp2::states<sm::PoweredOff, sm::PoweredOn>;
-    using Events = fsmpp2::events<sm::PowerButtonPressed, sm::DoorOpen, sm::DoorClose, sm::StartStopButtonPressed, sm::SetTimer, sm::TimeElapsed>;
+    std::string input;
+    std::cout << "> ";
+    std::cin >> input;
 
-    fsmpp2::plantuml::print_state_diagram<StateMachine, Events>(std::cout);
+    if (input == "?" || input == "help") {
+        std::cout << "PowerButtonPressed, DoorOpen, DoorClose, StartStopButtonPressed, SetTimer, TimeElapsed" << std::endl;
+        return true;
+    }
+
+    if (input == "exit") {
+        return false;
+    }
+
+    if (input == "PowerButtonPressed") {
+        sm.dispatch(sm::PowerButtonPressed{});
+    }
+
+    if (input == "DoorOpen") {
+        sm.dispatch(sm::DoorOpen{});
+    }
+
+    if (input == "DoorClose") {
+        sm.dispatch(sm::DoorClose{});
+    }
+
+    if (input == "StartStopButtonPressed") {
+        sm.dispatch(sm::StartStopButtonPressed{});
+    }
+
+    if (input == "SetTimer") {
+        int seconds = 0;
+        std::cin >> seconds;
+        sm.dispatch(sm::SetTimer{std::chrono::seconds{seconds}});
+    }
+
+    if (input == "TimeElapsed") {
+        int seconds = 0;
+        std::cin >> seconds;
+        sm.dispatch(sm::TimeElapsed{std::chrono::seconds{seconds}});
+    }
+
+    return true;
+}
+
+int main(int argc, char **argv)
+{
+    using States = fsmpp2::states<
+        sm::PoweredOff,
+        sm::PoweredOn
+    >;
+
+    using Events = fsmpp2::events<
+        sm::PowerButtonPressed,
+        sm::DoorOpen,
+        sm::DoorClose,
+        sm::StartStopButtonPressed,
+        sm::SetTimer,
+        sm::TimeElapsed
+    >;
+
+    if (argc == 2 && argv[1] == std::string{"uml"}) {
+        fsmpp2::plantuml::print_state_diagram<States, Events>(std::cout);
+    } else {
+        sm::ContextData ctx;
+        fsmpp2::state_machine<States, Events, sm::ContextData> sm{ctx};
+
+        while (read_input(sm))
+            ;
+    }
 }

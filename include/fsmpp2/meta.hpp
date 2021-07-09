@@ -64,6 +64,24 @@ struct type_list_first<type_list<First, Tail...>> {
     using type = First;
 };
 
+template<class, template<typename> typename>
+struct type_list_transform;
+
+template<class... T, template<typename> typename F>
+struct type_list_transform<type_list<T...>, F> {
+    using result = type_list< typename F<T>::type ... >;
+};
+
+template<class, template<typename...> typename> struct type_list_rename;
+template<class... T, template<typename...> typename F>
+struct type_list_rename<type_list<T...>, F> {
+    using result = F<T...>;
+};
+
+template<class, class> struct type_list_push_front;
+template<class... E, class T> struct type_list_push_front<type_list<E...>, T> {
+    using result = type_list<T, E...>;
+};
 
 } // namespace fsmpp2::meta
 

@@ -89,7 +89,7 @@ struct StateWithContext : fsmpp2::state<Context>
 
 TEST_CASE("Event handling by single state", "[example][fsmpp2]")
 {
-    fsmpp2::states<SingleState> sm;
+    fsmpp2::state_manager<SingleState> sm;
 
     // states transit to a first state from the list, here SingleState
     REQUIRE(sm.is_in<SingleState>());
@@ -109,7 +109,7 @@ TEST_CASE("Event handling by single state", "[example][fsmpp2]")
 
 TEST_CASE("Simple transitions between two states", "[example][fsmpp2]")
 {
-    fsmpp2::states<StateA, StateB> sm;
+    fsmpp2::state_manager<StateA, StateB> sm;
 
     // starting in first state from the states list
     REQUIRE(sm.is_in<StateA>());
@@ -126,7 +126,7 @@ TEST_CASE("Simple transitions between two states", "[example][fsmpp2]")
 
 TEST_CASE("Transition choice", "[example][fsmpp2]")
 {
-    fsmpp2::states<StateA, StateB, StateC> sm;
+    fsmpp2::state_manager<StateA, StateB, StateC> sm;
 
     REQUIRE(sm.is_in<StateA>());
 
@@ -150,7 +150,7 @@ TEST_CASE("Context usage", "[example][fsmpp2]")
     // each of the states in a states set needs to declare (by inheriting state<Context>)
     // the same type of the context that it wants to use. States will forward Context
     // reference to state constructor
-    fsmpp2::states<StateWithContext> sm{context};
+    fsmpp2::state_manager<StateWithContext> sm{context};
 
     REQUIRE(sm.is_in<StateWithContext>());
     REQUIRE(context.ev1count == 0);
