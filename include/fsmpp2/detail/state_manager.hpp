@@ -4,6 +4,7 @@
 #include "fsmpp2/meta.hpp"
 #include "fsmpp2/transitions.hpp"
 #include "fsmpp2/states.hpp"
+#include "fsmpp2/contexts.hpp"
 #include <variant>
 
 namespace fsmpp2::detail
@@ -38,11 +39,7 @@ public:
         substates_.template emplace<1 + Index>(context_);
 
         // construct state
-        if constexpr (std::is_constructible_v<T, Context &>) {
-            states_.template emplace<T>(context_);
-        } else {
-            states_.template emplace<T>();
-        }
+        emplace_state<T>(context_);
     }
 
     void exit() {
@@ -79,6 +76,36 @@ public:
     }
 
 private:
+    template<class T, class C>
+    void emplace_state(C &c) {
+        if constexpr (std::is_constructible_v<T, C&>) {
+            states_.template emplace<T>(c);
+        } else {
+            states_.template emplace<T>();
+        }
+    }
+
+    template<class T, class... C>
+    static constexpr bool is_constructible_by_one_of() {
+        return (std::is_constructible_v<T, C&> || ...);
+    }
+
+    template<class T, class U, class... C>
+    void try_emplace_state(fsmpp2::contexts<C...> &ctx) {
+        if constexpr (std::is_constructible_v<T, U&>) {
+            states_.template emplace<T>(ctx.template get<U>());
+        }
+    }
+
+    template<class T, class... C>
+    void emplace_state(fsmpp2::contexts<C...> &ctx) {
+        if constexpr(is_constructible_by_one_of<T, C...>()) {
+            (try_emplace_state<T, C, C...>(ctx), ...);
+        } else {
+            states_.template emplace<T>();
+        }
+    }
+
     void enter_first() {
         if constexpr (States::count) {
             using first_t = typename meta::type_list_first<type_list>::type;

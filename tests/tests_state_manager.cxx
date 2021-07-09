@@ -136,3 +136,27 @@ TEST_CASE("State manager substate", "[state_manager]")
     sm.dispatch(Ev3{});
     CHECK(ctx.ev3count == 2);
 }
+
+namespace
+{
+struct CtxA { bool value = false; };
+struct CtxB { bool value = false; };
+
+struct AcceptA : fsmpp2::state<>
+{
+    AcceptA(CtxA &c) {
+        c.value = true;
+    }
+};
+}
+
+TEST_CASE("Init state manager with contexts", "[state_manager][contexts]")
+{
+    CtxA ctx_a;
+    CtxB ctx_b;
+    fsmpp2::contexts<CtxA, CtxB> ctxs{ctx_a, ctx_b};
+
+    fsmpp2::detail::state_manager<fsmpp2::states<AcceptA>, fsmpp2::contexts<CtxA, CtxB>> sm{ctxs};
+
+    REQUIRE(ctx_a.value);
+}
