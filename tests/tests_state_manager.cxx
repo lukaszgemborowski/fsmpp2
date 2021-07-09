@@ -39,9 +39,6 @@ TEST_CASE("State manager basic operations", "[state_manager]")
     AContext ctx;
     fsmpp2::state_manager<fsmpp2::states<StateA, StateB>, AContext> sm{ctx};
 
-    REQUIRE(sm.is_in<StateA>() == false);
-
-    sm.enter<StateA>();
     REQUIRE(sm.is_in<StateA>() == true);
     REQUIRE(sm.is_in<StateB>() == false);
 
@@ -69,4 +66,38 @@ TEST_CASE("State manager basic operations", "[state_manager]")
         CHECK(ctx.shared_value == 42);
         CHECK(sm.is_in<StateB>());
     }
+}
+
+namespace
+{
+
+struct InnerOuterCtx {
+    bool innerConstructed = false;
+    bool outerConstructed = false;
+};
+
+struct InnerState : fsmpp2::state<>
+{
+    InnerState(InnerOuterCtx &ctx)
+    {
+        ctx.innerConstructed = true;
+    }
+};
+
+struct OuterState : fsmpp2::state<fsmpp2::states<InnerState>>
+{
+    OuterState(InnerOuterCtx &ctx)
+    {
+        ctx.outerConstructed = true;
+    }
+};
+}
+
+TEST_CASE("State manager substate", "[state_manager]")
+{
+    InnerOuterCtx ctx;
+    fsmpp2::state_manager<fsmpp2::states<OuterState>, InnerOuterCtx> sm{ctx};
+
+    CHECK(ctx.innerConstructed);
+    CHECK(ctx.outerConstructed);
 }

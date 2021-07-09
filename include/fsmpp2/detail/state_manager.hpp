@@ -18,23 +18,33 @@ struct state_manager
 {
 private:
     using type_list = typename States::type_list;
-    using first_state = typename meta::type_list_first<type_list>::type;
 
 public:
     state_manager()
         : context_ {}
     {
+        enter_first();
     }
 
     state_manager(Context &ctx)
         : context_ {ctx}
     {
+        enter_first();
+    }
+
+    ~state_manager() {
+        exit();
     }
 
     template<class T>
     void enter() {
-        states_.template emplace<std::monostate>();
+        exit();
 
+        // create substate manager
+        constexpr auto Index = meta::type_list_index<T>(type_list{});
+        substates_.template emplace<1 + Index>(context_.value());
+
+        // construct state
         if constexpr (std::is_constructible_v<T, Context &>) {
             states_.template emplace<T>(context_.value());
         } else {
@@ -69,6 +79,13 @@ public:
     }
 
 private:
+    void enter_first() {
+        if constexpr (States::count) {
+            using first_t = typename meta::type_list_first<type_list>::type;
+            enter<first_t>();
+        }
+    }
+
     template<class S, class E>
     bool handle(S &state, E const& e) requires detail::EventHandler<S, E> {
         if (handle_result(state.handle(e))) {
@@ -120,13 +137,15 @@ private:
     template<class T> struct get_substate_manager_type {
         using type = state_manager<typename T::substates_type, Context>;
     };
+    using substates_manager_list = typename meta::type_list_transform<type_list, get_substate_manager_type>::result;
+    using substates_manager_list_fin = typename meta::type_list_push_front<substates_manager_list, std::monostate>::result;
     using substates_manager_variant = typename meta::type_list_rename<
-        typename meta::type_list_transform<type_list, get_substate_manager_type>::result,
+        substates_manager_list_fin,
         std::variant>::result;
 
     detail::context<Context>    context_;
     states_variant              states_;
-    //substates_manager_variant   substates_;
+    substates_manager_variant   substates_;
 };
 
 } // namespace fsmpp2
