@@ -295,7 +295,7 @@ int main(int argc, char **argv)
         fsmpp2::plantuml::print_state_diagram<States, Events>(std::cout);
     } else {
         sm::ContextData ctx;
-        fsmpp2::state_machine<States, Events, sm::ContextData> sm{ctx};
+        fsmpp2::state_machine sm{States{}, Events{}, ctx};
 
         while (read_input(sm))
             ;

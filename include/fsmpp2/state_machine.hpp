@@ -2,7 +2,6 @@
 #define FSMPP2_STATE_MACHINE_HPP
 
 #include "fsmpp2/detail/state_manager.hpp"
-#include "fsmpp2/detail/context.hpp"
 
 namespace fsmpp2
 {
@@ -12,13 +11,13 @@ class state_machine {
 public:
     state_machine()
         : context_ {}
-        , manager_ {context_.value()}
+        , manager_ {context_}
     {
     }
 
-    state_machine(Context& ctx)
+    state_machine(States, Events, Context&& ctx)
         : context_ {ctx}
-        , manager_ {context_.value()}
+        , manager_ {context_}
     {
     }
 
@@ -28,9 +27,14 @@ public:
     }
 
 private:
-    detail::context<Context>                context_;
-    detail::state_manager<States, Context>  manager_;
+    Context                                context_;
+    detail::state_manager<
+        States,
+        std::remove_reference_t<Context>>  manager_;
 };
+
+template<class States, class Events, class Context>
+state_machine(States, Events, Context &) -> state_machine<States, Events, Context &>;
 
 } // namespace fsmpp2
 
