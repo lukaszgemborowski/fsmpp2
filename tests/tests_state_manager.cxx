@@ -74,21 +74,47 @@ namespace
 struct InnerOuterCtx {
     bool innerConstructed = false;
     bool outerConstructed = false;
+    bool ev1handled = false;
+    bool ev2handled = false;
+    int ev3count = 0;
 };
 
 struct InnerState : fsmpp2::state<>
 {
-    InnerState(InnerOuterCtx &ctx)
+    InnerOuterCtx& ctx;
+
+    InnerState(InnerOuterCtx& ctx) : ctx{ctx}
     {
         ctx.innerConstructed = true;
+    }
+
+    auto handle(Ev1 const&) {
+        ctx.ev1handled = true;
+        return handled();
+    }
+
+    auto handle(Ev3 const&) {
+        ctx.ev3count ++;
+        return not_handled();
     }
 };
 
 struct OuterState : fsmpp2::state<fsmpp2::states<InnerState>>
 {
-    OuterState(InnerOuterCtx &ctx)
+    InnerOuterCtx& ctx;
+    OuterState(InnerOuterCtx& ctx) : ctx{ctx}
     {
         ctx.outerConstructed = true;
+    }
+
+    auto handle(Ev2 const&) {
+        ctx.ev2handled = true;
+        return handled();
+    }
+
+    auto handle(Ev3 const&) {
+        ctx.ev3count ++;
+        return handled();
     }
 };
 }
@@ -100,4 +126,13 @@ TEST_CASE("State manager substate", "[state_manager]")
 
     CHECK(ctx.innerConstructed);
     CHECK(ctx.outerConstructed);
+
+    sm.dispatch(Ev1{});
+    CHECK(ctx.ev1handled);
+
+    sm.dispatch(Ev2{});
+    CHECK(ctx.ev2handled);
+
+    sm.dispatch(Ev3{});
+    CHECK(ctx.ev3count == 2);
 }

@@ -61,9 +61,16 @@ public:
         auto result = false;
 
         std::visit(
-            [this, &e, &result](auto &state) { result = handle(state, e); },
-            states_
+            [this, &e, &result](auto &substate) { result = substate_dispatch(substate, e); },
+            substates_
         );
+
+        if (result == false) {
+            std::visit(
+                [this, &e, &result](auto &state) { result = handle(state, e); },
+                states_
+            );
+        }
 
         return result;
     }
@@ -84,6 +91,16 @@ private:
             using first_t = typename meta::type_list_first<type_list>::type;
             enter<first_t>();
         }
+    }
+
+    template<class SS, class E>
+    bool substate_dispatch(SS& substate, E const &e) {
+        return substate.dispatch(e);
+    }
+
+    template<class E>
+    bool substate_dispatch(std::monostate, E const&) {
+        return false;
     }
 
     template<class S, class E>
