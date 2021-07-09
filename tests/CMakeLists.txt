@@ -4,8 +4,6 @@ add_executable(
     tests_meta.cxx
     tests_state_manager.cxx
     #tests_examples.cxx
-    #ests_state_hierarchy.cxx
-    #tests_example_1.cxx
     #tests_reflection.cxx
 )
 
