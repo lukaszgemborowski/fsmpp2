@@ -39,8 +39,10 @@ public:
     template<class E>
     auto dispatch(E const& e) {
         auto result = false;
-        states_.apply(
-            [this, &e, &result](auto *ptr, auto *ss) { result = handle(*ptr, *ss, e); }
+
+        std::visit(
+            [this, &e, &result](auto &state) { result = handle(state, e); },
+            states_
         );
 
         return result;
@@ -53,26 +55,22 @@ public:
 
     template<class S>
     S& state() {
-        return states_.template state<S>();
+        return std::get<S>(states_);
     }
 
 private:
-    template<class S, class SubS, class E>
-    bool handle(S &state, SubS &substates, E const& e) requires detail::EventHandler<S, E> {
-        if (!substates.handle(e)) {
-            return handle_result(state.handle(e));
-        } else {
-            return true;
-        }
-    }
-
-    template<class S, class SubS, class E>
-    bool handle(S& state, SubS &substates, E const& e) {
-        if (substates.handle(e)) {
+    template<class S, class E>
+    bool handle(S &state, E const& e) requires detail::EventHandler<S, E> {
+        if (handle_result(state.handle(e))) {
             return true;
         } else {
             return false;
         }
+    }
+
+    template<class S, class E>
+    bool handle(S& state, E const& e) {
+        return false;
     }
 
     template<class... T>
