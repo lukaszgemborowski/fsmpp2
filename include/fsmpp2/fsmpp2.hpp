@@ -1,7 +1,6 @@
 #ifndef FSMPP2_FSMPP2_HPP
 #define FSMPP2_FSMPP2_HPP
 
-#include "fsmpp2/detail/single_state_instance.hpp"
 #include "fsmpp2/detail/state_manager.hpp"
 #include "fsmpp2/meta.hpp"
 #include "fsmpp2/detail.hpp"
@@ -16,9 +15,7 @@ struct event {};
 template<class... E>
 using events = meta::type_list<E...>;
 
-template<class...> struct state_manager;
-
-template<class Context = detail::NullContext, class SubStates = state_manager<>>
+template<class Context = detail::NullContext, class SubStates = states<>>
 struct state {
     using context_type = Context;
     using substates_type = SubStates;

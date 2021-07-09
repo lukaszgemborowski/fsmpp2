@@ -11,25 +11,18 @@ namespace fsmpp2::detail
  * Single state instance, the class functionality is similar to std::variant.
  * the aim is to manage lifetime of the state reusing the same storage.
  **/
-template<class... States>
+template<class States>
 struct single_state_instance
 {
-    template<class F, class ...>
-    struct state_context_type {
-        using type = typename F::context_type;
-    };
+private:
+    using type_list = typename States::type_list;
 
 public:
-    using context_type = typename state_context_type<States...>::type;
-    using type_list = meta::type_list<States...>;
-
-    template<class State>
-    void create(context_type &ctx) {
-        static_assert(meta::type_list_has<State>(type_list{}), "state is not in set");
-
+    template<class State, class Context>
+    void create(Context &ctx) {
         new (substate_storage_) typename State::substates_type (ctx);
 
-        if constexpr (std::is_constructible_v<State, context_type &>) {
+        if constexpr (std::is_constructible_v<State, Context &>) {
             new (storage_) State (ctx);
         } else {
             new (storage_) State ();
@@ -42,7 +35,7 @@ public:
             [this]<typename T, typename SS>(T *ptr, SS* substates) {
                 ptr->~T();
                 substates->~SS();
-                index_ = sizeof...(States);
+                index_ = States::count;
             }
         );
     }
@@ -59,7 +52,7 @@ public:
 
     template<class F>
     void apply(F func) {
-        apply(func, std::make_index_sequence<sizeof...(States)>{});
+        apply(func, std::make_index_sequence<States::count>{});
     }
 
 private:
@@ -81,9 +74,14 @@ private:
 
 private:
     // TODO: extract storage type to separate class
-    unsigned char storage_[detail::storage_for(meta::type_list<States...>{})];
-    unsigned char substate_storage_[detail::storage_for(meta::type_list<typename States::substates_type...>{})];
-    std::size_t index_ = sizeof...(States);
+    unsigned char storage_[detail::storage_for(type_list{})];
+
+    template<class T> struct get_substates_type {
+        using type = state_manager<typename T::substates_type>;
+    };
+    using substates_list = typename meta::type_list_transform<type_list, get_substates_type>::result;
+    unsigned char substate_storage_[detail::storage_for(substates_list{})];
+    std::size_t index_ = States::count;
 };
 
 } // namespace fsmpp2::detail

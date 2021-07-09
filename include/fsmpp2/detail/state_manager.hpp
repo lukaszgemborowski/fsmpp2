@@ -2,10 +2,10 @@
 #define FSMPP2_DETAIL_STATE_MANAGER_HPP
 
 #include "fsmpp2/meta.hpp"
-#include "fsmpp2/detail/single_state_instance.hpp"
 #include "fsmpp2/context.hpp"
 #include "fsmpp2/transitions.hpp"
 #include "fsmpp2/states.hpp"
+#include <variant>
 
 namespace fsmpp2
 {
@@ -13,40 +13,22 @@ namespace fsmpp2
 /**
  * Manages a set of state, creates, destroys and pass events to a proper state
  **/
-template<class... States>
+template<class States, class Context>
 struct state_manager
 {
-public:
-    using type_list = meta::type_list<States...>;
+private:
+    using type_list = typename States::type_list;
     using first_state = typename meta::type_list_first<type_list>::type;
 
-    using context_type = typename first_state::context_type;
-    static_assert(
-        detail::verify_same_context_type<context_type, States...>::value,
-        "All states in states set needs to have exactly the same context type, verify"
-        "if you declared all states with the same context"
-    );
-
+public:
     state_manager()
         : context_ {}
-        , states_ {}
+        , states_ {std::in_place_type_t<first_state>{}}
     {
-        states_.template create<first_state>(context_.value());
-    }
-
-    state_manager(context_type &ctx)
-        : context_ {ctx}
-        , states_ {}
-    {
-        states_.template create<first_state>(context_.value());
-    }
-
-    ~state_manager() {
-        states_.destroy();
     }
 
     template<class E>
-    auto handle(E const& e) {
+    auto dispatch(E const& e) {
         auto result = false;
         states_.apply(
             [this, &e, &result](auto *ptr, auto *ss) { result = handle(*ptr, *ss, e); }
@@ -115,14 +97,17 @@ private:
     }
 
 private:
-    detail::context<context_type> context_;
-    detail::single_state_instance<States...> states_;
-};
+    using states_variant = typename meta::type_list_rename<type_list, std::variant>::result;
+    template<class T> struct get_substate_manager_type {
+        using type = state_manager<typename T::substates_type, Context>;
+    };
+    using substates_manager_variant = typename meta::type_list_rename<
+        typename meta::type_list_transform<type_list, get_substate_manager_type>::result,
+        std::variant>::result;
 
-template<> struct state_manager<>
-{
-    template<class T> state_manager(T&) {}
-    template<class E> auto handle(E const&) { return false; }
+    detail::context<Context>    context_;
+    states_variant              states_;
+    //substates_manager_variant   substates_;
 };
 
 } // namespace fsmpp2
