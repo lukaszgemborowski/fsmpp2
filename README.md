@@ -10,7 +10,7 @@ The main goals of the implementation are:
 
 ## Requirements
 
-Currently C++20 capable compiler is required (concepts) with some part of standard library: type_traits, array and optional (to be removed).
+Currently C++20 capable compiler is required (concepts) with some part of standard library: type_traits, array, variant and optional.
 With few minor tweaks the library can be backported to C++17 (mainly replacing concepts with some std::enable_if/SFINAE trickery).
 
 # Overview
@@ -204,7 +204,15 @@ The library supports state hierarchy but this sections is "To be described". For
 
 ## PlantUML diagrams
 
-There's experimental support for PlantUML state diagrams (currently supported only when compiled with GCC). Having a state set and event set the `fsmpp2::plantuml::print_state_diagram<States, Events>(std::cout);` function is able to output PlantUML source code for diagram generation to `std::ostream`, eg:
+There's experimental support for PlantUML state diagrams (currently supported only when compiled with GCC). There are two type of diagrams that can be
+created with fsmpp2:
+
+1. state diagram
+2. (runtime) sequence diagram
+
+### State diagrams
+
+Having a state set and event set the `fsmpp2::plantuml::print_state_diagram<States, Events>(std::cout);` function is able to output PlantUML source code for diagram generation to `std::ostream`, eg:
 
 ```cpp
 namespace events
@@ -274,7 +282,28 @@ Another one, previously linked [microwave example](examples/plantuml_microwave.c
 
 ![Multi level diagram](examples/plantuml_microwave.png)
 
+This does not require instantiation of the state machine object therefore can be easily factored out to a separate function or target (eg. CI updating state
+diagrams every build).
 
+### Sequence diagrams
+
+This is a combination of Tracer functionality (basically a trace logger following state machine execution in runtime) with a specialized type of formatting.
+It can provide kind of a log (state transitions, events) in a form of sequence diagram. It is not strictly a "specification" type of a diagram but can be
+useful for debugging or generating diagrams out of unit tests.
+
+```cpp
+sm::ContextData ctx;
+std::ofstream ofs{"sequence.txt"};
+fsmpp2::state_machine sm{States{}, Events{}, ctx, fsmpp2::plantuml::seq_diagrm_trace{ofs}};
+
+// run a scenarion
+sm.tracer().begin();
+sm.dispatch(...);
+...
+sm.tracer().end();
+```
+
+![Sequence diagram](examples/plantuml_microwave_seq.png)
 
 # Licence
 
