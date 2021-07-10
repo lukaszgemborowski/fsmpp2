@@ -22,8 +22,15 @@ public:
     {
     }
 
-    state_machine(States, Events, Context& ctx)
+    template<class S, class E, class C>
+    state_machine(S, E, C& ctx)
         : context_ {ctx}
+        , manager_ {context_, tracer_}
+    {
+    }
+
+    state_machine(States, Events)
+        : context_ {}
         , manager_ {context_, tracer_}
     {
     }
@@ -50,6 +57,10 @@ public:
         return tracer_;
     }
 
+    auto& context() {
+        return context_;
+    }
+
 private:
     Context                                 context_;
     Tracer                                  tracer_;
@@ -58,6 +69,8 @@ private:
         std::remove_reference_t<Context>,
         Tracer>                             manager_;
 };
+
+template<class S, class E, class C> state_machine(S, E, C&) -> state_machine<S, E, C&>;
 
 } // namespace fsmpp2
 
