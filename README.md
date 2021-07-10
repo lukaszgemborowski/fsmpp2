@@ -69,7 +69,7 @@ using States = fsmpp2::states<StateA, StateB>;
 using Events = fsmpp2::events<Ev1>;
 
 Context ctx;
-fsmpp2::state_machine<States, Events, Context> sm{ctx};
+fsmpp2::state_machine<States, Events, Context &> sm{ctx};
 
 // or, to instantiate Context within state_machine template itself, omit the reference argument
 
