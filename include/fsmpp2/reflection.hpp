@@ -27,7 +27,7 @@ auto class_type_name()
 template<class StateType, class Event>
 auto state_handle_result_type()
 {
-    if constexpr (fsmpp2::detail::EventHandler<StateType, Event>) {
+    if constexpr (fsmpp2::detail::can_handle_event<StateType, Event>::value) {
         auto s = 0;
         return std::string{abi::__cxa_demangle(
             typeid(decltype(std::declval<StateType>().handle(std::declval<Event>()))).name(),
