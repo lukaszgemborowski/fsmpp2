@@ -1,5 +1,6 @@
 #include <iostream>
 #include <chrono>
+#include <fstream>
 #include "fsmpp2/plantuml.hpp"
 #include "fsmpp2/state_machine.hpp"
 
@@ -291,8 +292,28 @@ int main(int argc, char **argv)
         sm::TimeElapsed
     >;
 
-    if (argc == 2 && argv[1] == std::string{"uml"}) {
-        fsmpp2::plantuml::print_state_diagram<States, Events>(std::cout);
+    if (argc == 2) {
+        if (argv[1] == std::string{"state"}) {
+            fsmpp2::plantuml::print_state_diagram<States, Events>(std::cout);
+        } else if (argv[1] == std::string{"sequence"}) {
+            sm::ContextData ctx;
+            std::ofstream ofs{"sequence.txt"};
+            fsmpp2::state_machine sm{States{}, Events{}, ctx, fsmpp2::plantuml::seq_diagrm_trace{ofs}};
+
+            // run a scenarion
+            sm.tracer().begin();
+            sm.dispatch(sm::PowerButtonPressed{});
+            sm.dispatch(sm::DoorOpen{});
+            sm.dispatch(sm::DoorClose{});
+            sm.dispatch(sm::SetTimer{std::chrono::seconds{30}});
+            sm.dispatch(sm::StartStopButtonPressed{});
+            sm.dispatch(sm::TimeElapsed{std::chrono::seconds{15}});
+            sm.dispatch(sm::DoorOpen{});
+            sm.dispatch(sm::DoorClose{});
+            sm.dispatch(sm::TimeElapsed{std::chrono::seconds{15}});
+            sm.dispatch(sm::PowerButtonPressed{});
+            sm.tracer().end();
+        }
     } else {
         sm::ContextData ctx;
         fsmpp2::state_machine sm{States{}, Events{}, ctx};

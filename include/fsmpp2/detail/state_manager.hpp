@@ -5,26 +5,37 @@
 #include "fsmpp2/transitions.hpp"
 #include "fsmpp2/states.hpp"
 #include "fsmpp2/contexts.hpp"
+#include "fsmpp2/config.hpp"
 #include <variant>
 
 namespace fsmpp2::detail
 {
 
+struct NullTracer {
+    template<class State, class E>
+    void begin_event_handling () {}
+    void end_event_handling(bool) {}
+    template<class State>
+    void transition() {}
+};
+
 /**
  * Manages a set of state, creates, destroys and pass events to a proper state
  **/
-template<class States, class Context>
+template<class States, class Context, class Tracer = NullTracer>
 struct state_manager
 {
 private:
     using type_list = typename States::type_list;
 
 public:
-    state_manager(Context &ctx)
+    state_manager(Context &ctx, Tracer& tracer)
         : context_ {ctx}
+        , tracer_ {tracer}
     {
         enter_first();
     }
+
 
     ~state_manager() {
         exit();
@@ -36,7 +47,7 @@ public:
 
         // create substate manager
         constexpr auto Index = meta::type_list_index<T>(type_list{});
-        substates_.template emplace<1 + Index>(context_);
+        substates_.template emplace<1 + Index>(context_, tracer_);
 
         // construct state
         emplace_state<T>(context_);
@@ -57,7 +68,13 @@ public:
 
         if (result == false) {
             std::visit(
-                [this, &e, &result](auto &state) { result = handle(state, e); },
+                [this, &e, &result](auto &state) {
+                    tracer_.template begin_event_handling<
+                        std::remove_reference_t<decltype(state)>,
+                        std::remove_reference_t<decltype(e)>>();
+                    result = handle(state, e);
+                    tracer_.end_event_handling(result);
+                },
                 states_
             );
         }
@@ -160,6 +177,7 @@ private:
             using type_at_index = typename meta::type_list_type<I, transition_type_list>::type;
 
             if constexpr (meta::type_list_has<type_at_index>(type_list{})) {
+                tracer_.template transition<type_at_index>();
                 enter<type_at_index>();
             }
         }
@@ -172,7 +190,7 @@ private:
 
     // determine type of variant<state_manager<States>...>
     template<class T> struct get_substate_manager_type {
-        using type = state_manager<typename T::substates_type, Context>;
+        using type = state_manager<typename T::substates_type, Context, Tracer>;
     };
     using substates_manager_list = typename meta::type_list_transform<type_list, get_substate_manager_type>::result;
     using substates_manager_list_fin = typename meta::type_list_push_front<substates_manager_list, std::monostate>::result;
@@ -183,6 +201,7 @@ private:
     Context&                    context_;
     states_variant              states_;
     substates_manager_variant   substates_;
+    Tracer&                     tracer_;
 };
 
 } // namespace fsmpp2::detail

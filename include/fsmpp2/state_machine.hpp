@@ -7,24 +7,37 @@
 namespace fsmpp2
 {
 
-template<class States, class Events, class Context>
+template<class States, class Events, class Context, class Tracer = detail::NullTracer>
 class state_machine {
 public:
     state_machine()
         : context_ {}
-        , manager_ {context_}
+        , manager_ {context_, tracer_}
     {
     }
 
     state_machine(Context& ctx)
         : context_ {ctx}
-        , manager_ {context_}
+        , manager_ {context_, tracer_}
+    {
+    }
+
+    state_machine(States, Events, Context& ctx)
+        : context_ {ctx}
+        , manager_ {context_, tracer_}
     {
     }
 
     state_machine(States, Events, Context&& ctx)
         : context_ {ctx}
-        , manager_ {context_}
+        , manager_ {context_, tracer_}
+    {
+    }
+
+    state_machine(States, Events, Context& ctx, Tracer&& tracer)
+        : context_ {ctx}
+        , tracer_ {std::move(tracer)}
+        , manager_ {context_, tracer}
     {
     }
 
@@ -33,15 +46,18 @@ public:
         return manager_.dispatch(e);
     }
 
+    auto& tracer() {
+        return tracer_;
+    }
+
 private:
-    Context                                context_;
+    Context                                 context_;
+    Tracer                                  tracer_;
     detail::state_manager<
         States,
-        std::remove_reference_t<Context>>  manager_;
+        std::remove_reference_t<Context>,
+        Tracer>                             manager_;
 };
-
-template<class States, class Events, class Context>
-state_machine(States, Events, Context &) -> state_machine<States, Events, Context &>;
 
 } // namespace fsmpp2
 
