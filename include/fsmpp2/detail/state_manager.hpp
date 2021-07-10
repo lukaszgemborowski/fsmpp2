@@ -141,7 +141,7 @@ private:
     }
 
     template<class S, class E>
-    bool handle(S &state, E const& e) requires detail::EventHandler<S, E> {
+    auto handle(S &state, E const& e) -> std::enable_if_t<detail::can_handle_event<S, E>::value, bool> {
         if (handle_result(state.handle(e))) {
             return true;
         } else {
@@ -150,7 +150,7 @@ private:
     }
 
     template<class S, class E>
-    bool handle(S& state, E const& e) {
+    auto handle(S& state, E const& e) -> std::enable_if_t<!detail::can_handle_event<S, E>::value, bool> {
         return false;
     }
 

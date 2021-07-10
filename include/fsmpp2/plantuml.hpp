@@ -2,6 +2,7 @@
 #define FSMPP2_PLANTUML_HPP
 
 #include "fsmpp2/reflection.hpp"
+#include <algorithm>
 
 namespace fsmpp2::plantuml
 {
