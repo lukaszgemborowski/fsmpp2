@@ -10,8 +10,7 @@ The main goals of the implementation are:
 
 ## Requirements
 
-Currently C++20 capable compiler is required (concepts) with some part of standard library: type_traits, array, variant and optional.
-With few minor tweaks the library can be backported to C++17 (mainly replacing concepts with some std::enable_if/SFINAE trickery).
+Currently only C++17 capable compiler is required with some part of standard library: type_traits, variant and optional.
 
 # Overview
 
