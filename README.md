@@ -145,7 +145,7 @@ by default, SM enters the first state on the list, in this case `StateA`.
 
 ## Event passing
 
-Event passing is done by calling handle() method on SM object:
+Event passing is done by calling dispatch() method on SM object:
 
 ```cpp
 fsmpp2::state_machine<...> sm;
