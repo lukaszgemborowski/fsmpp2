@@ -53,11 +53,24 @@ public:
         return manager_.dispatch(e);
     }
 
+    template<class E>
+    auto dispatch(E const& e) const {
+        return manager_.dispatch(e);
+    }
+
     auto& tracer() {
         return tracer_;
     }
 
+    auto const& tracer() const {
+        return tracer_;
+    }
+
     auto& context() {
+        return context_;
+    }
+
+    auto const& context() const {
         return context_;
     }
 
