@@ -23,8 +23,6 @@ struct handled {};
 struct not_handled {};
 template<class T> struct transition { using type = T; };
 
-struct NullContext {};
-
 } // namespace fsmpp2::detail
 
 #endif // FSMPP2_DETAIL_HPP

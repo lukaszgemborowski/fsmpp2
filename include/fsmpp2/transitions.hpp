@@ -18,13 +18,13 @@ struct transitions {
         transition
     } outcome;
 
-    transitions(std::size_t i)
+    explicit transitions(std::size_t i)
         : idx {i}
         , outcome {result::transition}
     {}
 
     template<class U>
-    transitions(transitions<U>)
+    explicit transitions(transitions<U>)
         : idx {meta::type_list_index<U>(list{})}
         , outcome {result::transition}
     {
@@ -36,12 +36,12 @@ struct transitions {
     {
     }
 
-    transitions(detail::handled)
+    explicit  transitions(detail::handled)
         : idx {sizeof...(S)}
         , outcome {result::handled}
     {}
 
-    transitions(detail::not_handled)
+    explicit transitions(detail::not_handled)
         : idx {sizeof...(S)}
         , outcome {result::not_handled}
     {}

@@ -8,7 +8,7 @@ namespace fsmpp2
 
 template<class... T>
 struct contexts {
-    contexts(T&... ctxs)
+    explicit contexts(T&... ctxs)
         : contexts_ {ctxs...}
     {
     }
