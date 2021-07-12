@@ -37,7 +37,7 @@ struct A_State : fsmpp2::state<> {
 };
 ```
 
-**IMPORTANT** states are not heap-allocated, state machine statically allocates enough storage (byte array) and reuse that storage using placement new operator.
+States are not heap-allocated, state machine holds all states in std::variant.
 
 ## State context
 
@@ -51,8 +51,7 @@ struct A_State : fsmpp2::state<> {
 }
 ```
 
-It is important to note, that every state in state machine have to use exactly the same type of context type. If it's not used in particular state,
-user may provide a constructor that does not accept it as its argument.
+If a state does not need a context it can just simply ignore that fact and provide a constructor with no arguments.
 
 ```cpp
 struct A_State : fsmpp2::state<> {
