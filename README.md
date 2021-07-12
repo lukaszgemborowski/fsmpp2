@@ -306,4 +306,4 @@ sm.tracer().end();
 
 # Licence
 
-GPL-3.0 License, for details see [LICENSE file](LICENSE).
+GPL-3.0 License, for details see [LICENSE file](LICENSE). Additionally I reserve my rights to use any code in this repository written by myself in non-GPL licensed software. This note is just to be fair with FOSS community, I want this software to be free but I have my own obligations.
