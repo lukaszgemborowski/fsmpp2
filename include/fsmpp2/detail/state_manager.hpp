@@ -7,6 +7,7 @@
 #include "fsmpp2/contexts.hpp"
 #include "fsmpp2/config.hpp"
 #include "fsmpp2/detail/state_container.hpp"
+#include "fsmpp2/detail/substate_manager_container.hpp"
 #include <variant>
 
 namespace fsmpp2::detail
@@ -37,7 +38,6 @@ public:
         enter_first();
     }
 
-
     ~state_manager() {
         exit();
     }
@@ -47,8 +47,7 @@ public:
         exit();
 
         // create substate manager
-        constexpr auto Index = meta::type_list_index<T>(type_list{});
-        substates_.template emplace<1 + Index>(context_, tracer_);
+        substates_.template create<T>(context_, tracer_);
 
         // construct state
         emplace_state<T>(context_);
@@ -62,11 +61,10 @@ public:
     auto dispatch(E const& e) {
         auto result = false;
 
-        std::visit(
+        substates_.visit(
             [this, &e, &result](auto &substate) {
                 result = substate_dispatch(substate, e);
-            },
-            substates_
+            }
         );
 
         if (result == false) {
@@ -156,7 +154,6 @@ private:
 
     template<class... T>
     bool handle_result(transitions<T...> t) {
-        // TODO: verify T... are in First,States...
         if (t.is_transition()) {
             handle_transition(t, std::make_index_sequence<sizeof...(T)>{});
             return true;
@@ -184,20 +181,16 @@ private:
     }
 
 private:
-    // determine type of variant<state_manager<States>...>
-    template<class T> struct get_substate_manager_type {
-        using type = state_manager<typename T::substates_type, Context, Tracer>;
-    };
-    using substates_manager_list = typename meta::type_list_transform<type_list, get_substate_manager_type>::result;
-    using substates_manager_list_fin = typename meta::type_list_push_front<substates_manager_list, std::monostate>::result;
-    using substates_manager_variant = typename meta::type_list_rename<
-        substates_manager_list_fin,
-        std::variant>::result;
+    template<class X>
+    using SelfWrapper = state_manager<X, Context, Tracer>;
 
-    Context&                    context_;
-    state_container<States>     states_;
-    substates_manager_variant   substates_;
-    Tracer&                     tracer_;
+    using StateContainer = state_container<States>;
+    using SubStateContainer = detail::substate_manager_container<States, SelfWrapper>;
+
+    Context&                context_;
+    StateContainer          states_;
+    SubStateContainer       substates_;
+    Tracer&                 tracer_;
 };
 
 } // namespace fsmpp2::detail
