@@ -6,6 +6,8 @@
 #include "fsmpp2/states.hpp"
 #include "fsmpp2/contexts.hpp"
 #include "fsmpp2/config.hpp"
+#include "fsmpp2/detail/state_container.hpp"
+#include "fsmpp2/detail/substate_manager_container.hpp"
 #include <variant>
 
 namespace fsmpp2::detail
@@ -36,7 +38,6 @@ public:
         enter_first();
     }
 
-
     ~state_manager() {
         exit();
     }
@@ -46,37 +47,34 @@ public:
         exit();
 
         // create substate manager
-        constexpr auto Index = meta::type_list_index<T>(type_list{});
-        substates_.template emplace<1 + Index>(context_, tracer_);
+        substates_.template create<T>(context_, tracer_);
 
         // construct state
         emplace_state<T>(context_);
     }
 
     void exit() {
-        states_.template emplace<std::monostate>();
+        states_.exit();
     }
 
     template<class E>
     auto dispatch(E const& e) {
         auto result = false;
 
-        std::visit(
-            [this, &e, &result](auto &substate) { result = substate_dispatch(substate, e); },
-            substates_
+        substates_.visit(
+            [this, &e, &result](auto &substate) {
+                result = substate_dispatch(substate, e);
+            }
         );
 
         if (result == false) {
-            std::visit(
-                [this, &e, &result](auto &state) {
-                    tracer_.template begin_event_handling<
-                        std::remove_reference_t<decltype(state)>,
-                        std::remove_reference_t<decltype(e)>>();
-                    result = handle(state, e);
-                    tracer_.end_event_handling(result);
-                },
-                states_
-            );
+            states_.visit([this, &e, &result](auto &state) {
+                tracer_.template begin_event_handling<
+                    std::remove_reference_t<decltype(state)>,
+                    std::remove_reference_t<decltype(e)>>();
+                result = handle(state, e);
+                tracer_.end_event_handling(result);
+            });
         }
 
         return result;
@@ -84,21 +82,21 @@ public:
 
     template<class S>
     bool is_in() const {
-        return std::holds_alternative<S>(states_);
+        return states_.template is_in<S>();
     }
 
     template<class S>
     S& state() {
-        return std::get<S>(states_);
+        return states_.template state<S>();
     }
 
 private:
     template<class T, class C>
     void emplace_state(C &c) {
         if constexpr (std::is_constructible_v<T, C&>) {
-            states_.template emplace<T>(c);
+            states_.template enter<T>(c);
         } else {
-            states_.template emplace<T>();
+            states_.template enter<T>();
         }
     }
 
@@ -110,7 +108,7 @@ private:
     template<class T, class U, class... C>
     void try_emplace_state(fsmpp2::contexts<C...> &ctx) {
         if constexpr (std::is_constructible_v<T, U&>) {
-            states_.template emplace<T>(ctx.template get<U>());
+            states_.template enter<T>(ctx.template get<U>());
         }
     }
 
@@ -119,7 +117,7 @@ private:
         if constexpr(is_constructible_by_one_of<T, C...>()) {
             (try_emplace_state<T, C, C...>(ctx), ...);
         } else {
-            states_.template emplace<T>();
+            states_.template enter<T>();
         }
     }
 
@@ -156,7 +154,6 @@ private:
 
     template<class... T>
     bool handle_result(transitions<T...> t) {
-        // TODO: verify T... are in First,States...
         if (t.is_transition()) {
             handle_transition(t, std::make_index_sequence<sizeof...(T)>{});
             return true;
@@ -184,24 +181,16 @@ private:
     }
 
 private:
-    // determine type of variant<empty_states, States...>
-    using states_variant_list = typename meta::type_list_push_front<type_list, std::monostate>::result;
-    using states_variant = typename meta::type_list_rename<states_variant_list, std::variant>::result;
+    template<class X>
+    using SelfWrapper = state_manager<X, Context, Tracer>;
 
-    // determine type of variant<state_manager<States>...>
-    template<class T> struct get_substate_manager_type {
-        using type = state_manager<typename T::substates_type, Context, Tracer>;
-    };
-    using substates_manager_list = typename meta::type_list_transform<type_list, get_substate_manager_type>::result;
-    using substates_manager_list_fin = typename meta::type_list_push_front<substates_manager_list, std::monostate>::result;
-    using substates_manager_variant = typename meta::type_list_rename<
-        substates_manager_list_fin,
-        std::variant>::result;
+    using StateContainer = state_container<States>;
+    using SubStateContainer = substate_manager_container<States, SelfWrapper>;
 
-    Context&                    context_;
-    states_variant              states_;
-    substates_manager_variant   substates_;
-    Tracer&                     tracer_;
+    Context&                context_;
+    StateContainer          states_;
+    SubStateContainer       substates_;
+    Tracer&                 tracer_;
 };
 
 } // namespace fsmpp2::detail
