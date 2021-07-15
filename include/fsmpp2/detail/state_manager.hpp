@@ -185,7 +185,7 @@ private:
     using SelfWrapper = state_manager<X, Context, Tracer>;
 
     using StateContainer = state_container<States>;
-    using SubStateContainer = detail::substate_manager_container<States, SelfWrapper>;
+    using SubStateContainer = substate_manager_container<States, SelfWrapper>;
 
     Context&                context_;
     StateContainer          states_;

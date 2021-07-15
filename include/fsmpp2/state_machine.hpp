@@ -10,37 +10,49 @@ namespace fsmpp2
 template<class States, class Events, class Context, class Tracer = detail::NullTracer>
 class state_machine {
 public:
+    /**
+     * Creates a state machine.
+     *
+     * All template parameters must by provided explicitly,
+     * Context will be created internally as regular data member.
+     **/
     state_machine()
         : context_ {}
         , manager_ {context_, tracer_}
     {
     }
 
+    /**
+     * Creates a state machine with a context.
+     *
+     * All template parameters must by provided explicitly,
+     * Context provided as argument will be assigned.
+     *
+     * WARNING: if a non-reference type is provided as Context template argument
+     * to this class template, this constructor may do a copy or fail to compile.
+     * TODO: remove this constructor or check for lvalues
+     **/
     state_machine(Context& ctx)
         : context_ {ctx}
         , manager_ {context_, tracer_}
     {
     }
 
+    /**
+     * Creates a state machine with a context.
+     *
+     * When using this constructor all class template arguments can be deduced automatically.
+     **/
     template<class S, class E, class C>
-    state_machine(S, E, C& ctx)
-        : context_ {ctx}
+    state_machine(S, E, C&& ctx)
+        : context_ {std::forward<C>(ctx)}
         , manager_ {context_, tracer_}
     {
     }
 
-    state_machine(States, Events)
-        : context_ {}
-        , manager_ {context_, tracer_}
-    {
-    }
-
-    state_machine(States, Events, Context&& ctx)
-        : context_ {ctx}
-        , manager_ {context_, tracer_}
-    {
-    }
-
+    /**
+     * Creates a state machine with a context and a tracer.
+     **/
     state_machine(States, Events, Context& ctx, Tracer&& tracer)
         : context_ {ctx}
         , tracer_ {std::move(tracer)}
@@ -48,28 +60,46 @@ public:
     {
     }
 
+    /**
+     * Dispatch an event to a current state.
+     **/
     template<class E>
     auto dispatch(E const& e) {
         return manager_.dispatch(e);
     }
 
+    /**
+     * Dispatch an event to a current state.
+     **/
     template<class E>
     auto dispatch(E const& e) const {
         return manager_.dispatch(e);
     }
 
+    /**
+     * Gets a reference to a tracer object.
+     **/
     auto& tracer() {
         return tracer_;
     }
 
+    /**
+     * Gets a reference to a tracer object.
+     **/
     auto const& tracer() const {
         return tracer_;
     }
 
+    /**
+     * Gets a reference to a context.
+     **/
     auto& context() {
         return context_;
     }
 
+    /**
+     * Gets a reference to a context.
+     **/
     auto const& context() const {
         return context_;
     }
@@ -84,6 +114,7 @@ private:
 };
 
 template<class S, class E, class C> state_machine(S, E, C&) -> state_machine<S, E, C&>;
+template<class S, class E, class C> state_machine(S, E, C&&) -> state_machine<S, E, C>;
 
 } // namespace fsmpp2
 

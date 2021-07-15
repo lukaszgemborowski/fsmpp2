@@ -7,17 +7,22 @@
 namespace fsmpp2
 {
 
+/**
+ * Event handler return type.
+ *
+ * It indicates possible outcomes from an event handler.
+ * API of this class used internally in fsmpp2 framework.
+ **/
 template<class... S>
-struct transitions {
-    using list = meta::type_list<S...>;
-    std::size_t idx;
-
+class transitions {
+private:
     enum class result {
         not_handled,
         handled,
         transition
-    } outcome;
+    };
 
+public:
     explicit transitions(std::size_t i)
         : idx {i}
         , outcome {result::transition}
@@ -53,6 +58,10 @@ struct transitions {
     bool is_handled() const {
         return outcome == result::handled;
     }
+
+    using list = meta::type_list<S...>;
+    std::size_t idx;
+    result outcome;
 };
 
 } // namespace fsmpp2
