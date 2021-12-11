@@ -16,7 +16,7 @@ inline auto sanitize_name(std::string str)
     return str;
 }
 
-void print_one_level(std::ostream &os, std::vector<fsmpp2::reflection::state_description> const& level)
+inline void print_one_level(std::ostream &os, std::vector<fsmpp2::reflection::state_description> const& level)
 {
     os << "[*] --> " << sanitize_name(level[0].name) << std::endl;
     for (auto &s : level) {
