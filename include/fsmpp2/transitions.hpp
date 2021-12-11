@@ -2,7 +2,6 @@
 #define FSMPP2_TRANSITIONS_HPP
 
 #include "fsmpp2/meta.hpp"
-#include "fsmpp2/detail.hpp"
 
 namespace fsmpp2
 {
