@@ -6,6 +6,14 @@
 
 namespace fsmpp2
 {
+namespace detail
+{
+
+struct handled {};
+struct not_handled {};
+template<class T> struct transition { using type = T; };
+
+} // namespace fsmpp2::detail
 
 /**
  * Event handler return type.
