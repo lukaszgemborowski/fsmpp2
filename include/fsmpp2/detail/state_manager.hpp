@@ -8,6 +8,7 @@
 #include "fsmpp2/config.hpp"
 #include "fsmpp2/detail/state_container.hpp"
 #include "fsmpp2/detail/substate_manager_container.hpp"
+#include "fsmpp2/detail/traits.hpp"
 #include <variant>
 
 namespace fsmpp2::detail

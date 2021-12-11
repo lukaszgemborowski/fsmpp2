@@ -6,7 +6,7 @@
 #  error "clang is not yet supported"
 # endif
 
-#include "fsmpp2/detail.hpp"
+#include "fsmpp2/detail/traits.hpp"
 #include "fsmpp2/states.hpp"
 #include <cxxabi.h>
 #include <string>
