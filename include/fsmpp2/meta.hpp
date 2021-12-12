@@ -34,6 +34,12 @@ constexpr auto type_list_index(type_list<F, T...>, std::size_t idx = 0)
     }
 }
 
+template<class X>
+constexpr auto type_list_index(type_list<>, std::size_t idx = 0)
+{
+    return 0;
+}
+
 template<std::size_t I, std::size_t Target, class F, class... T>
 struct type_list_type_impl {
     using type = typename type_list_type_impl<I + 1, Target, T...>::type;

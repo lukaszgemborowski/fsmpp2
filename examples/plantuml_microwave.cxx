@@ -1,6 +1,7 @@
 #include <iostream>
 #include <chrono>
 #include <fstream>
+#include "fsmpp2/fsmpp2.hpp"
 #include "fsmpp2/plantuml.hpp"
 #include "fsmpp2/state_machine.hpp"
 

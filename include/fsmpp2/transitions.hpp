@@ -2,24 +2,18 @@
 #define FSMPP2_TRANSITIONS_HPP
 
 #include "fsmpp2/meta.hpp"
+#include "fsmpp2/handle_result.hpp"
 
 namespace fsmpp2
 {
-namespace detail
-{
-
-struct handled {};
-struct not_handled {};
-template<class T> struct transition { using type = T; };
-
-} // namespace fsmpp2::detail
 
 /**
  * @brief Event handler return type.
  *
- * It indicates possible outcomes from an event handler.
- * API of this class used internally in fsmpp2 framework.
- **/
+ * It indicates possible outcomes from an event handler. It is also
+ * used to carry on information about event handler outcome. As its
+ * created from state->handle(ev) result.
+ */
 template<class... S>
 class transitions {
 private:
@@ -31,52 +25,29 @@ private:
 
 public:
     /**
-     * @brief Construct a new transitions object
+     * @brief Construct a new transitions object from handle_result<State>
      *
-     * This constructor is used only when returning from state::transition() method
-     * to indicate the destination state. It is then converted to corresponding
-     * transitions<S1, S2...> type at return.
+     * @tparam T state
      */
-    explicit transitions()
-        : idx {0}
-        , outcome {result::transition}
-    {}
-
-    /**
-     * @brief Construct a new transitions object
-     *
-     * This constructor is used when converting transitions<S> object returned
-     * from state::transition() call. Idx is calculated to indicate index of the
-     * target state.
-     *
-     * @tparam U destination state
-     */
-    template<class U>
-    explicit transitions(transitions<U>)
-        : idx {meta::type_list_index<U>(list{})}
+    template<class T>
+    transitions(handle_result<T>) noexcept
+        : idx {meta::type_list_index<typename T::type>(list{})}
         , outcome {result::transition}
     {
     }
 
     /**
-     * @brief Construct a new transitions object
-     *
-     * This constructor is used when converting return value from state::handled/not_handled()
-     *
-     * @param t transitions object returned from state::handled/not_handled()
+     * @brief Construct a new transitions object indicating handled event
      */
-    transitions(transitions<> const& t)
-        : idx {sizeof...(S)}
-        , outcome {t.outcome}
-    {
-    }
-
-    explicit  transitions(detail::handled)
+    transitions(handle_result<detail::handled>) noexcept
         : idx {sizeof...(S)}
         , outcome {result::handled}
     {}
 
-    explicit transitions(detail::not_handled)
+    /**
+     * @brief Construct a new transitions object indicating not handled event
+     */
+    transitions(handle_result<detail::not_handled>) noexcept
         : idx {sizeof...(S)}
         , outcome {result::not_handled}
     {}

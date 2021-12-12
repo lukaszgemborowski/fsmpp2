@@ -1,4 +1,5 @@
 #include <iostream>
+#include "fsmpp2/fsmpp2.hpp"
 #include "fsmpp2/plantuml.hpp"
 
 namespace events
