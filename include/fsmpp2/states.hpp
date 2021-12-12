@@ -47,7 +47,7 @@ struct state {
      **/
     template<class S>
     auto transition() const {
-        return transitions<S>{0};
+        return transitions<S>{};
     }
 
     /**
