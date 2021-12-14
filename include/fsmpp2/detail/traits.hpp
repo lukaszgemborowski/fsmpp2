@@ -1,7 +1,5 @@
-#ifndef FSMPP2_DETAIL_HPP
-#define FSMPP2_DETAIL_HPP
-
-#include "fsmpp2/meta.hpp"
+#ifndef FSMPP_DETAIL_TRAITS_HPP
+#define FSMPP_DETAIL_TRAITS_HPP
 
 namespace fsmpp2::detail
 {
@@ -19,10 +17,6 @@ public:
     static constexpr auto value = std::is_same_v<std::true_type, decltype(test<T>(0))>;
 };
 
-struct handled {};
-struct not_handled {};
-template<class T> struct transition { using type = T; };
-
 } // namespace fsmpp2::detail
 
-#endif // FSMPP2_DETAIL_HPP
+#endif // FSMPP_DETAIL_TRAITS_HPP

@@ -3,7 +3,6 @@
 
 #include "fsmpp2/detail/state_manager.hpp"
 #include "fsmpp2/meta.hpp"
-#include "fsmpp2/detail.hpp"
 #include "fsmpp2/config.hpp"
 #include "fsmpp2/state_machine.hpp"
 

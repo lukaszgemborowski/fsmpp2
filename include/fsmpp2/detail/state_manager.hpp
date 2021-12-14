@@ -8,6 +8,7 @@
 #include "fsmpp2/config.hpp"
 #include "fsmpp2/detail/state_container.hpp"
 #include "fsmpp2/detail/substate_manager_container.hpp"
+#include "fsmpp2/detail/traits.hpp"
 #include <variant>
 
 namespace fsmpp2::detail
@@ -122,7 +123,7 @@ private:
     }
 
     void enter_first() {
-        if constexpr (States::count) {
+        if constexpr (States::count > 0) {
             using first_t = typename meta::type_list_first<type_list>::type;
             enter<first_t>();
         }
@@ -140,7 +141,7 @@ private:
 
     template<class S, class E>
     auto handle(S &state, E const& e) -> std::enable_if_t<detail::can_handle_event<S, E>::value, bool> {
-        if (handle_result(state.handle(e))) {
+        if (handle_result(transitions{state.handle(e)})) {
             return true;
         } else {
             return false;
