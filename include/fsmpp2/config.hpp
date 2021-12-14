@@ -2,7 +2,7 @@
 #define FSMPP2_CONFIG_HPP
 
 #define FSMPP2_VERSION_MAJOR 0
-#define FSMPP2_VERSION_MINOR 2
+#define FSMPP2_VERSION_MINOR 3
 #define FSMPP2_VERSION_PATCH 0
 
 namespace fsmpp2
