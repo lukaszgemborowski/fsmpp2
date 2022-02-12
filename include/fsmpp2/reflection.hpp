@@ -36,10 +36,7 @@ template<class StateType, class Event>
 auto state_handle_result_type()
 {
     if constexpr (fsmpp2::detail::can_handle_event<StateType, Event>::value) {
-        auto s = 0;
-        return std::string{abi::__cxa_demangle(
-            typeid(decltype(std::declval<StateType>().handle(std::declval<Event>()))).name(),
-            0, 0, &s)};
+        return get_type_name<decltype(std::declval<StateType>().handle(std::declval<Event>()))>();
     } else {
         return std::string{"fsmpp2::transitions<>"};
     }
