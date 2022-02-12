@@ -3,6 +3,7 @@
 
 #include "fsmpp2/meta.hpp"
 #include "fsmpp2/handle_result.hpp"
+#include "fsmpp2/transitions.hpp"
 
 namespace fsmpp2
 {
@@ -47,7 +48,7 @@ struct state {
      **/
     template<class S>
     auto transition() const {
-        return handle_result<detail::transition<S>>{};
+        return transitions<S>{detail::transition<S>{}};
     }
 
     /**
@@ -57,7 +58,7 @@ struct state {
      * It is intended to be returned from state's event handler.
      **/
     auto not_handled() const {
-        return handle_result<detail::not_handled>{};
+        return transitions<>{detail::not_handled{}};
     }
 
     /**
@@ -67,7 +68,7 @@ struct state {
      * It is intended to be returned from state's event handler.
      **/
     auto handled() const {
-        return handle_result<detail::handled>{};
+        return transitions<>{detail::handled{}};
     }
 };
 

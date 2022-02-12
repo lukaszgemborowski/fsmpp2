@@ -25,13 +25,28 @@ private:
 
 public:
     /**
-     * @brief Construct a new transitions object from handle_result<State>
+     * @brief Construct new object from empty-listed transactions object.
+     *
+     * This is a case when handler declares a return type:
+     *      transitions<A, B, C> handle(Foo);
+     * but calls handled() or not_handled() which returns exactly transitions<> type
+     * which needs to be converted here to transitions<A, B, C>.
+     *
+     */
+    constexpr transitions(transitions<> const& rhs) noexcept
+        : idx {0}
+        , outcome {rhs.outcome}
+    {
+    }
+
+    /**
+     * @brief Construct a new transitions object directly from detail::transition<>
      *
      * @tparam T state
      */
     template<class T>
-    transitions(handle_result<T>) noexcept
-        : idx {meta::type_list_index<typename T::type>(list{})}
+    transitions(detail::transition<T>) noexcept
+        : idx {meta::type_list_index<T>(list{})}
         , outcome {result::transition}
     {
     }
@@ -39,7 +54,7 @@ public:
     /**
      * @brief Construct a new transitions object indicating handled event
      */
-    transitions(handle_result<detail::handled>) noexcept
+    transitions(detail::handled) noexcept
         : idx {sizeof...(S)}
         , outcome {result::handled}
     {}
@@ -47,7 +62,7 @@ public:
     /**
      * @brief Construct a new transitions object indicating not handled event
      */
-    transitions(handle_result<detail::not_handled>) noexcept
+    transitions(detail::not_handled) noexcept
         : idx {sizeof...(S)}
         , outcome {result::not_handled}
     {}

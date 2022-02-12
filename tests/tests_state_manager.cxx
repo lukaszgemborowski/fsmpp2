@@ -38,7 +38,7 @@ TEST_CASE("State manager basic operations", "[state_manager]")
 {
     AContext ctx;
     fsmpp2::detail::NullTracer nt;
-    fsmpp2::detail::state_manager<fsmpp2::states<StateA, StateB>, AContext> sm{ctx, nt};
+    fsmpp2::detail::state_manager<fsmpp2::states<StateA, StateB>, AContext &> sm{ctx, nt};
 
     REQUIRE(sm.is_in<StateA>() == true);
     REQUIRE(sm.is_in<StateB>() == false);

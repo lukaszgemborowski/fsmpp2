@@ -141,7 +141,7 @@ private:
 
     template<class S, class E>
     auto handle(S &state, E const& e) -> std::enable_if_t<detail::can_handle_event<S, E>::value, bool> {
-        if (handle_result(transitions{state.handle(e)})) {
+        if (handle_result(state.handle(e))) {
             return true;
         } else {
             return false;
@@ -153,6 +153,7 @@ private:
         return false;
     }
 
+    // state handler declared a return transitions<> return type
     template<class... T>
     bool handle_result(transitions<T...> t) {
         if (t.is_transition()) {
