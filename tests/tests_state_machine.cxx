@@ -34,7 +34,7 @@ TEST_CASE("Pass a context as ctor argument", "[state_machine]4")
     using Events = fsmpp2::events<Ev1>;
 
     Context ctx;
-    fsmpp2::state_machine<States, Events, Context> sm{ctx};
+    fsmpp2::state_machine<States, Events, Context &> sm{ctx};
 }
 
 TEST_CASE("Use CTAD to deduce type of state machine", "[state_machine]4")

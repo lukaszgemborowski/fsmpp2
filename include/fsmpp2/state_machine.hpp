@@ -10,12 +10,20 @@ namespace fsmpp2
 template<class States, class Events, class Context, class Tracer = detail::NullTracer>
 class state_machine {
 public:
+    using context_type = Context;
+    using states_type = States;
+    using events_type = Events;
+    using tracer_type = Tracer;
+
     /**
      * Creates a state machine.
      *
      * All template parameters must by provided explicitly,
      * Context will be created internally as regular data member.
      **/
+    template<
+        class T = Context,
+        std::enable_if_t<std::is_constructible_v<T>, bool> = true>
     state_machine()
         : context_ {}
         , manager_ {context_, tracer_}
@@ -23,17 +31,27 @@ public:
     }
 
     /**
-     * Creates a state machine with a context.
-     *
-     * All template parameters must by provided explicitly,
-     * Context provided as argument will be assigned.
-     *
-     * WARNING: if a non-reference type is provided as Context template argument
-     * to this class template, this constructor may do a copy or fail to compile.
-     * TODO: remove this constructor or check for lvalues
+     * Creates a state machine with a reference to a context.
+     * 
+     * This construct is to be used when user does not rely on CTAD and is providing
+     * all state_machine<> template arguments explicitly.
      **/
+    template<
+        class T = Context,
+        // enable this constructor only if Context is an lvalue ref
+        std::enable_if_t<std::is_lvalue_reference_v<T>, bool> = true>
     state_machine(Context& ctx)
         : context_ {ctx}
+        , manager_ {context_, tracer_}
+    {
+    }
+
+    template<
+        class T = Context,
+        // enable this constructor only if Context is an rvalue ref
+        std::enable_if_t<!std::is_lvalue_reference_v<T>, bool> = true>
+    state_machine(Context&& ctx)
+        : context_ {std::move(ctx)}
         , manager_ {context_, tracer_}
     {
     }

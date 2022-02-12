@@ -91,3 +91,47 @@ TEST_CASE("Is able to accept a reference to one of the contexts from a set", "[s
 
     CHECK(ctx.some_value == 1);
 }
+
+TEST_CASE("Check single argument constructor", "[state_machine][context]")
+{
+    using sm_type = fsmpp2::state_machine<
+            fsmpp2::states<StateNoContext>,
+            fsmpp2::events<>,
+            int>;
+
+    CHECK(std::is_constructible_v<sm_type>);        // sm_type sm{};
+    CHECK(std::is_constructible_v<sm_type, int&&>); // int x; sm_type sm{std::move(x)};
+    CHECK(!std::is_constructible_v<sm_type, int&>); // int x; sm_type sm{x};
+
+    using sm_type_ref = fsmpp2::state_machine<
+        fsmpp2::states<StateNoContext>,
+        fsmpp2::events<>,
+        int &>;
+
+    CHECK(!std::is_constructible_v<sm_type_ref>);        // sm_type sm{};
+    CHECK(!std::is_constructible_v<sm_type_ref, int&&>); // int x; sm_type sm{std::move(x)};
+    CHECK(std::is_constructible_v<sm_type_ref, int&>);   // int x; sm_type sm{x};
+}
+
+TEST_CASE("Check auto-deduced context type", "[state_machine][context]")
+{
+    SECTION("Passing lvalue reference")
+    {
+        int ctx = 0;
+        fsmpp2::state_machine sm {fsmpp2::states<StateNoContext>{}, fsmpp2::events<>{}, ctx};
+        CHECK(std::is_same_v<typename decltype(sm)::context_type, int &>);
+    }
+
+    SECTION("Passing a temporary")
+    {
+        fsmpp2::state_machine sm {fsmpp2::states<StateNoContext>{}, fsmpp2::events<>{}, 42};
+        CHECK(std::is_same_v<typename decltype(sm)::context_type, int>);
+    }
+
+    SECTION("Moving in a context")
+    {
+        int ctx = 42;
+        fsmpp2::state_machine sm {fsmpp2::states<StateNoContext>{}, fsmpp2::events<>{}, std::move(ctx)};
+        CHECK(std::is_same_v<typename decltype(sm)::context_type, int>);
+    }
+}
