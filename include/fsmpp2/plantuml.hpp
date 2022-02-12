@@ -57,8 +57,8 @@ struct seq_diagrm_trace {
 
     template<class State, class E>
     void begin_event_handling () {
-        current_state_ = reflection::class_type_name<State>();
-        current_event_ = reflection::class_type_name<E>();
+        current_state_ = reflection::get_type_name<State>();
+        current_event_ = reflection::get_type_name<E>();
     }
 
     void end_event_handling(bool) {
@@ -68,7 +68,7 @@ struct seq_diagrm_trace {
     void transition() {
         os_ << detail::sanitize_name(current_state_)
             << " -> "
-            << detail::sanitize_name(reflection::class_type_name<State>())
+            << detail::sanitize_name(reflection::get_type_name<State>())
             << " : "
             << detail::sanitize_name(current_event_)
             << "\n";

@@ -22,9 +22,9 @@ struct EventHandlingState : fsmpp2::state<> {
 
 }
 
-TEST_CASE("State name", "[!nonportable][reflection][class_type_name]")
+TEST_CASE("State name", "[!nonportable][reflection][get_type_name]")
 {
-    auto name = fsmpp2::reflection::class_type_name<StateName>();
+    auto name = fsmpp2::reflection::get_type_name<StateName>();
     REQUIRE(name == "(anonymous namespace)::StateName");
 }
 
