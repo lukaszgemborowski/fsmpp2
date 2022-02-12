@@ -8,6 +8,12 @@ The main goals of the implementation are:
 3. Type safety
 4. Limited stdlib dependencies (in theory easier to port on embedded platforms)
 
+## Status of the project
+
+It is still not a production grade software, use with caution, report any issues in the "Issues" page.
+
+* master build & test status: [![CMake](https://github.com/lukaszgemborowski/fsmpp2/actions/workflows/cmake.yml/badge.svg)](https://github.com/lukaszgemborowski/fsmpp2/actions/workflows/cmake.yml)
+
 ## Requirements
 
 Currently only C++17 capable compiler is required with some part of standard library: type_traits, variant and optional.
