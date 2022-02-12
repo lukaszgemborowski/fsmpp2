@@ -18,20 +18,25 @@ namespace fsmpp2::reflection
 {
 
 template<class StateType>
-auto class_type_name()
+auto get_type_name()
 {
     auto s = 0;
-    return std::string{abi::__cxa_demangle(typeid(StateType).name(), 0, 0, &s)};
+    auto buffer = abi::__cxa_demangle(typeid(StateType).name(), 0, 0, &s);
+
+    if (buffer) {
+        auto result = std::string{buffer};
+        std::free(buffer);
+        return result;
+    } else {
+        return std::string{"__cxa_demangle failed"};
+    }
 }
 
 template<class StateType, class Event>
 auto state_handle_result_type()
 {
     if constexpr (fsmpp2::detail::can_handle_event<StateType, Event>::value) {
-        auto s = 0;
-        return std::string{abi::__cxa_demangle(
-            typeid(decltype(std::declval<StateType>().handle(std::declval<Event>()))).name(),
-            0, 0, &s)};
+        return get_type_name<decltype(std::declval<StateType>().handle(std::declval<Event>()))>();
     } else {
         return std::string{"fsmpp2::transitions<>"};
     }
@@ -81,7 +86,7 @@ private:
     template<class T>
     static auto get_single(std::vector<std::string> &result) 
     {
-        result.push_back(class_type_name<T>());
+        result.push_back(get_type_name<T>());
     }
 };
 
@@ -118,7 +123,7 @@ private:
     template<class T>
     static void fill_single_state(std::vector<state_description> &res) {
         state_description desc;
-        desc.name = class_type_name<T>();
+        desc.name = get_type_name<T>();
         fill_events_information<T, Events...>(desc);
 
         // check for substates
@@ -135,7 +140,7 @@ private:
     template<class S, class E>
     static void fill_single_event_information(state_description &desc) {
         state_description::transition t;
-        t.event = class_type_name<E>();
+        t.event = get_type_name<E>();
         t.states = state_handle_transition_to<S, E>();
 
         if (t.states.size() > 0)
