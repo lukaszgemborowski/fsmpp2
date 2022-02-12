@@ -1,14 +1,17 @@
-project(fsmpp2)
+cmake_policy(SET CMP0048 NEW) # enable use of VERSION in project() function
+
+project(
+    fsmpp2
+    VERSION 0.3.0
+    HOMEPAGE_URL "https://github.com/lukaszgemborowski/fsmpp2"
+    LANGUAGES CXX
+)
 cmake_minimum_required(VERSION 3.16)
 
 option(FSMPP2_USE_CPP20 "Use C++20 features (requires C++20 capable compiler)" OFF)
 option(FSMPP2_TEST_ASAN "Enable ASan in tests" OFF)
 option(FSMPP2_TEST_UBSAN "Enable UBSan in tests" OFF)
 option(FSMPP2_BENCHMARK "Enable benchmarks target" OFF)
-
-set(FSMPP2_VERSION_MAJOR 0)
-set(FSMPP2_VERSION_MINOR 3)
-set(FSMPP2_VERSION_PATCH 0)
 
 configure_file(
     cmake/config.hpp.in
