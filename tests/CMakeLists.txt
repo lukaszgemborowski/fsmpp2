@@ -11,6 +11,7 @@ endif ()
 add_executable(
     tests
     main.cxx
+    scratchpad.cxx
     tests_meta.cxx
     tests_state_manager.cxx
     tests_state_machine.cxx
