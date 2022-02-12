@@ -21,7 +21,15 @@ template<class StateType>
 auto class_type_name()
 {
     auto s = 0;
-    return std::string{abi::__cxa_demangle(typeid(StateType).name(), 0, 0, &s)};
+    auto buffer = abi::__cxa_demangle(typeid(StateType).name(), 0, 0, &s);
+
+    if (buffer) {
+        auto result = std::string{buffer};
+        std::free(buffer);
+        return result;
+    } else {
+        return std::string{"__cxa_demangle failed"};
+    }
 }
 
 template<class StateType, class Event>
