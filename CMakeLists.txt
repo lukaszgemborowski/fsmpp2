@@ -2,6 +2,8 @@ project(fsmpp2)
 cmake_minimum_required(VERSION 3.16)
 
 option(FSMPP2_USE_CPP20 "Use C++20 features (requires C++20 capable compiler)" OFF)
+option(FSMPP2_TEST_ASAN "Enable ASan in tests" OFF)
+option(FSMPP2_TEST_UBSAN "Enable UBSan in tests" OFF)
 
 set(FSMPP2_VERSION_MAJOR 0)
 set(FSMPP2_VERSION_MINOR 3)
