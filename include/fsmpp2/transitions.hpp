@@ -89,8 +89,8 @@ public:
 
     using list = meta::type_list<S...>;
 
-    std::size_t idx;
-    result outcome;
+    std::size_t const idx;
+    result      const outcome;
 };
 
 } // namespace fsmpp2
