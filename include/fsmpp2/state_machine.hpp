@@ -6,8 +6,11 @@
 
 namespace fsmpp2
 {
-
+#ifdef FSMPP2_USE_CPP20
+template<StatesList States, EventsList Events, class Context, class Tracer = detail::NullTracer>
+#else
 template<class States, class Events, class Context, class Tracer = detail::NullTracer>
+#endif
 class state_machine {
 public:
     using context_type = Context;
@@ -61,7 +64,11 @@ public:
      *
      * When using this constructor all class template arguments can be deduced automatically.
      **/
+    #ifdef FSMPP2_USE_CPP20
+    template<StatesList S, EventsList E, class C>
+    #else
     template<class S, class E, class C>
+    #endif
     state_machine(S, E, C&& ctx)
         : context_ {std::forward<C>(ctx)}
         , manager_ {context_, tracer_}
@@ -81,7 +88,11 @@ public:
     /**
      * Dispatch an event to a current state.
      **/
+    #ifdef FSMPP2_USE_CPP20
+    template<Event E>
+    #else
     template<class E>
+    #endif
     auto dispatch(E const& e) {
         return manager_.dispatch(e);
     }
@@ -89,7 +100,11 @@ public:
     /**
      * Dispatch an event to a current state.
      **/
+    #ifdef FSMPP2_USE_CPP20
+    template<Event E>
+    #else
     template<class E>
+    #endif
     auto dispatch(E const& e) const {
         return manager_.dispatch(e);
     }

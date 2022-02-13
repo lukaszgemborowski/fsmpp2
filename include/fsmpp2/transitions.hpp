@@ -2,7 +2,7 @@
 #define FSMPP2_TRANSITIONS_HPP
 
 #include "fsmpp2/meta.hpp"
-#include "fsmpp2/handle_result.hpp"
+#include "fsmpp2/detail/handle_result.hpp"
 
 namespace fsmpp2
 {
@@ -89,8 +89,8 @@ public:
 
     using list = meta::type_list<S...>;
 
-    std::size_t idx;
-    result outcome;
+    std::size_t const idx;
+    result      const outcome;
 };
 
 } // namespace fsmpp2
