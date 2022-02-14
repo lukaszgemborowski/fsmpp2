@@ -17,6 +17,7 @@ add_executable(
     tests_state_machine.cxx
     tests_reflection.cxx
     tests_context_passing.cxx
+    tests_detail_traits.cxx
 )
 
 target_link_libraries(tests PRIVATE fsmpp2)

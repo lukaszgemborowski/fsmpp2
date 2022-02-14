@@ -163,3 +163,67 @@ TEST_CASE("Init state manager with contexts", "[state_manager][contexts]")
 
     REQUIRE(ctx_a.value);
 }
+
+namespace
+{
+
+struct ContextAcceptingState
+    : public fsmpp2::state<>
+    , public fsmpp2::access_context<CtxA>
+{
+    auto handle(Ev1) {
+        get_context().value = true;
+        return handled();
+    }
+};
+
+TEST_CASE("Single context accepting", "[state_manager][contexts][access_context]")
+{
+    CtxA ctx;
+    fsmpp2::detail::NullTracer nt;
+    fsmpp2::detail::state_manager<fsmpp2::states<ContextAcceptingState>, CtxA> sm{ctx, nt};
+
+    CHECK(ctx.value == false);
+    sm.dispatch(Ev1{});
+    CHECK(ctx.value == true);
+}
+
+TEST_CASE("Multi-context single access", "[state_manager][contexts][access_context]")
+{
+    CtxA ctxa;
+    CtxB ctxb;
+    fsmpp2::contexts<CtxB, CtxA> ctxs{ctxb, ctxa};
+    fsmpp2::detail::NullTracer nt;
+    fsmpp2::detail::state_manager<fsmpp2::states<ContextAcceptingState>, fsmpp2::contexts<CtxB, CtxA>> sm{ ctxs, nt};
+
+    CHECK(ctxa.value == false);
+    // ContextAcceptingState should request only CtxA from contexts<> set
+    sm.dispatch(Ev1{});
+    CHECK(ctxa.value == true);
+}
+
+namespace
+{
+
+struct HandlerAcceptingContext : public fsmpp2::state<>
+{
+    auto handle(Ev1, CtxA& c) {
+        c.value = true;
+        return handled();
+    }
+};
+
+}
+
+TEST_CASE("Event handler accepting context reference", "[state_manager]")
+{
+    CtxA ctx;
+    fsmpp2::detail::NullTracer nt;
+    fsmpp2::detail::state_manager<fsmpp2::states<HandlerAcceptingContext>, CtxA> sm{ctx, nt};
+
+    CHECK(ctx.value == false);
+    sm.dispatch(Ev1{});
+    CHECK(ctx.value == true);
+}
+
+}

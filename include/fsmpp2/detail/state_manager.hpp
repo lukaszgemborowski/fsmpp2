@@ -52,6 +52,7 @@ public:
 
         // construct state
         emplace_state<T>(context_);
+        states_.template init_context<T>(context_);
     }
 
     void exit() {
@@ -149,7 +150,18 @@ private:
     }
 
     template<class S, class E>
-    auto handle(S& state, E const& e) -> std::enable_if_t<!detail::can_handle_event<S, E>::value, bool> {
+    auto handle(S &state, E const& e) -> std::enable_if_t<detail::can_handle_event_with_context<S, E, Context>::value, bool> {
+        if (handle_result(state.handle(e, context_))) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    template<class S, class E>
+    auto handle(S& state, E const& e) -> std::enable_if_t<
+            !detail::can_handle_event<S, E>::value && !detail::can_handle_event_with_context<S, E, Context>::value,
+    bool> {
         return false;
     }
 
