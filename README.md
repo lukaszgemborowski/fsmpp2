@@ -1,12 +1,38 @@
-# Intro
+Table of contents:
 
-This is my second take on C++ state machine implementation. My first attempt can be found [here](https://github.com/lukaszgemborowski/fsmpp).
+* [General](#general)
+  * [Intro](#intro)
+  * [Status of the project](#status-of-the-project)
+  * [Requirements](#requirements)
+* [Overview](#overview)
+  * [State](#state)
+  * [Context](#context)
+    * [Accept in state's constructor](#accept-in-states-constructor)
+    * [Bring in automaticall by using access_context](#bring-in-automaticall-by-using-access_context)
+    * [Accept in event handler function](#accept-in-event-handler-function)
+  * [Context declaration](#context-declaration)
+  * [Multiple contexts](#multiple-contexts)
+  * [State machine](#state-machine)
+  * [Event passing](#event-passing)
+  * [State transitions](#state-transitions)
+  * [Nested states](#nested-states)
+  * [PlantUML diagrams](#plantuml-diagrams)
+    * [State diagrams](#state-diagrams)
+    * [Sequence diagrams](#sequence-diagrams)
+* [Licence](#licence)
+
+# General
+
+## Intro
+
+This is my second take on C++ state machine implementation. For those who are interested, my first attempt can be found [here](https://github.com/lukaszgemborowski/fsmpp).
 The main goals of the implementation are:
 
 1. No dynamic allocations
-2. Sub-state support (in contrast to first implementation)
+2. Sub-state support
 3. Type safety
 4. Limited stdlib dependencies (in theory easier to port on embedded platforms)
+5. It's not pure FSM, may execute any code/logic in event handlers
 
 ## Status of the project
 
@@ -45,27 +71,50 @@ struct A_State : fsmpp2::state<> {
 
 States are not heap-allocated, state machine holds all states in std::variant.
 
-## State context
+## Context
 
-While states are short living objects and the user have little to no control over how they are managed it is possible to pass a custom object reference (Context)
-to each state's constructor while it's created. Context type is defined while declaring state machine.
+While states are short living objects and the user have little to no control over how they are managed it is possible to pass a custom object reference (Context) to a state. Context is an arbitrary object that serves as long living shared data space. There are several ways to access a common Context from a state
+
+### Accept in state's constructor
 
 ```cpp
 struct CustomContext {};
 struct A_State : fsmpp2::state<> {
   A_State(CustomContext &) {}
-}
+};
 ```
 
-If a state does not need a context it can just simply ignore that fact and provide a constructor with no arguments.
+### Bring in automaticall by using access_context
 
 ```cpp
-struct A_State : fsmpp2::state<> {
-  A_State() = default; // still valid, this state does not reference a global context
-}
+struct CustomContext { int var = 0; };
+struct A_State
+  : fsmpp2::state<>
+  , fsmpp2::access_context<CustomContext>
+{
+  auto handle(Event) {
+    get_context().var = 42;
+    return handled();
+  }
+};
 ```
 
-### Context declaration
+> :warning: **You can't use get_context() from state's constructor**, it will be populated after the object is created.
+
+### Accept in event handler function
+
+```cpp
+struct CustomContext { int var = 0; };
+struct A_State : fsmpp2::state<>
+{
+  auto handle(Event, CustomContext& ctx) {
+    ctx.var = 42;
+    return handled();
+  }
+};
+```
+
+## Context declaration
 
 To pass a context down to state machine state you need to declare it in state_machine template. There are two ways of doing that, explicitly parametrize the template:
 
@@ -91,7 +140,7 @@ Context ctx;
 fsmpp2::state_machine sm{States{}, Events{}, ctx};
 ```
 
-### Multiple contexts
+## Multiple contexts
 
 In case you need different type of contexts in different states you can declare a set of contexts:
 
