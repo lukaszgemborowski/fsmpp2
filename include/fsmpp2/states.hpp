@@ -5,6 +5,7 @@
 #include "fsmpp2/detail/handle_result.hpp"
 #include "fsmpp2/transitions.hpp"
 #include "fsmpp2/config.hpp"
+#include <tuple>
 
 namespace fsmpp2
 {
@@ -96,11 +97,23 @@ struct state {
     }
 };
 
+template<class C, class... D>
+struct access_context {
+    using access_context_type = meta::type_list<C, D...>;
+
+    template<class T>
+    T& get_context() {
+        return *std::get<T *>(ctx_);
+    }
+
+    std::tuple<C *, D *...> ctx_;
+};
+
 /**
  * @brief Brings the context into the State automatically.
  */
 template<class C>
-struct access_context {
+struct access_context<C> {
     using access_context_type = C;
 
     /**

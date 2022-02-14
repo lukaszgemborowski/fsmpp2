@@ -177,6 +177,8 @@ struct ContextAcceptingState
     }
 };
 
+}
+
 TEST_CASE("Single context accepting", "[state_manager][contexts][access_context]")
 {
     CtxA ctx;
@@ -205,6 +207,37 @@ TEST_CASE("Multi-context single access", "[state_manager][contexts][access_conte
 namespace
 {
 
+struct MultipleContextAcceptingState
+    : public fsmpp2::state<>
+    , public fsmpp2::access_context<CtxA, CtxB>
+{
+    auto handle(Ev1) {
+        get_context<CtxA>().value = true;
+        get_context<CtxB>().value = true;
+        return handled();
+    }
+};
+
+}
+
+TEST_CASE("Multi-context multi-access", "[state_manager][contexts][access_context]")
+{
+    CtxA ctxa;
+    CtxB ctxb;
+    fsmpp2::contexts<CtxB, CtxA> ctxs{ctxb, ctxa};
+    fsmpp2::detail::NullTracer nt;
+    fsmpp2::detail::state_manager<fsmpp2::states<MultipleContextAcceptingState>, fsmpp2::contexts<CtxB, CtxA>> sm{ ctxs, nt};
+
+    CHECK(ctxa.value == false);
+    CHECK(ctxb.value == false);
+    sm.dispatch(Ev1{});
+    CHECK(ctxa.value == true);
+    CHECK(ctxb.value == true);
+}
+
+namespace
+{
+
 struct HandlerAcceptingContext : public fsmpp2::state<>
 {
     auto handle(Ev1, CtxA& c) {
@@ -224,6 +257,4 @@ TEST_CASE("Event handler accepting context reference", "[state_manager]")
     CHECK(ctx.value == false);
     sm.dispatch(Ev1{});
     CHECK(ctx.value == true);
-}
-
 }
