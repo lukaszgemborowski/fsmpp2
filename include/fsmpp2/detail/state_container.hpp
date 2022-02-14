@@ -65,7 +65,16 @@ public:
     template<class State, class Context>
     void init_context(Context &c) {
         if constexpr (detail::has_access_context_type<State>::value) {
+            static_assert(std::is_same_v<Context, typename State::access_context_type>, "Wrong context type requested by access_context<>");
             state<State>().ctx_ = &c;
+        }
+    }
+
+    template<class State, class... C>
+    void init_context(contexts<C...>& c) {
+        if constexpr (detail::has_access_context_type<State>::value) {
+            // TODO check if access_context_type is int contexts<>, static_assert
+            state<State>().ctx_ = &c.template get<typename State::access_context_type>();
         }
     }
 

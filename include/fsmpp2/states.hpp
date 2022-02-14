@@ -96,6 +96,9 @@ struct state {
     }
 };
 
+/**
+ * @brief Brings the context into the State automatically.
+ */
 template<class C>
 struct access_context {
     using access_context_type = C;

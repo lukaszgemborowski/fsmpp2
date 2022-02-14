@@ -188,4 +188,18 @@ TEST_CASE("Single context accepting", "[state_manager][contexts][access_context]
     CHECK(ctx.value == true);
 }
 
+TEST_CASE("Multi-context single access", "[state_manager][contexts][access_context]")
+{
+    CtxA ctxa;
+    CtxB ctxb;
+    fsmpp2::contexts<CtxB, CtxA> ctxs{ctxb, ctxa};
+    fsmpp2::detail::NullTracer nt;
+    fsmpp2::detail::state_manager<fsmpp2::states<ContextAcceptingState>, fsmpp2::contexts<CtxB, CtxA>> sm{ ctxs, nt};
+
+    CHECK(ctxa.value == false);
+    // ContextAcceptingState should request only CtxA from contexts<> set
+    sm.dispatch(Ev1{});
+    CHECK(ctxa.value == true);
+}
+
 }
