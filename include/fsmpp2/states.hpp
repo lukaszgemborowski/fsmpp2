@@ -100,10 +100,17 @@ template<class C>
 struct access_context {
     using access_context_type = C;
 
+    /**
+     * @brief Retrieve a context.
+     *
+     * @warning Calling this method in constructor is undefined behavior (crash in practice).
+     *          If you need to access the Context in the constructor, get it via State's ctor parameter.
+     */
     C& get_context() {
         return *ctx_;
     }
 
+    // TODO: make it inaccessible for State subclass
     C* ctx_ = nullptr;
 };
 
