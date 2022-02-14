@@ -202,4 +202,28 @@ TEST_CASE("Multi-context single access", "[state_manager][contexts][access_conte
     CHECK(ctxa.value == true);
 }
 
+namespace
+{
+
+struct HandlerAcceptingContext : public fsmpp2::state<>
+{
+    auto handle(Ev1, CtxA& c) {
+        c.value = true;
+        return handled();
+    }
+};
+
+}
+
+TEST_CASE("Event handler accepting context reference", "[state_manager]")
+{
+    CtxA ctx;
+    fsmpp2::detail::NullTracer nt;
+    fsmpp2::detail::state_manager<fsmpp2::states<HandlerAcceptingContext>, CtxA> sm{ctx, nt};
+
+    CHECK(ctx.value == false);
+    sm.dispatch(Ev1{});
+    CHECK(ctx.value == true);
+}
+
 }
