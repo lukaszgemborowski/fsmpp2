@@ -96,6 +96,17 @@ struct state {
     }
 };
 
+template<class C>
+struct access_context {
+    using access_context_type = C;
+
+    C& get_context() {
+        return *ctx_;
+    }
+
+    C* ctx_ = nullptr;
+};
+
 #ifdef FSMPP2_USE_CPP20
 namespace detail {
 template<class...> struct is_states_list : std::false_type {};

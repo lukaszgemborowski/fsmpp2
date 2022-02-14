@@ -163,3 +163,29 @@ TEST_CASE("Init state manager with contexts", "[state_manager][contexts]")
 
     REQUIRE(ctx_a.value);
 }
+
+namespace
+{
+
+struct ContextAcceptingState
+    : public fsmpp2::state<>
+    , public fsmpp2::access_context<CtxA>
+{
+    auto handle(Ev1) {
+        get_context().value = true;
+        return handled();
+    }
+};
+
+TEST_CASE("Single context accepting", "[state_manager][contexts][access_context]")
+{
+    CtxA ctx;
+    fsmpp2::detail::NullTracer nt;
+    fsmpp2::detail::state_manager<fsmpp2::states<ContextAcceptingState>, CtxA> sm{ctx, nt};
+
+    CHECK(ctx.value == false);
+    sm.dispatch(Ev1{});
+    CHECK(ctx.value == true);
+}
+
+}

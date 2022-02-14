@@ -2,6 +2,7 @@
 #define FSMPP2_STATE_CONTAINER_HPP
 
 #include "fsmpp2/meta.hpp"
+#include "fsmpp2/detail/traits.hpp"
 #include <variant>
 
 namespace fsmpp2::detail
@@ -59,6 +60,13 @@ public:
     template<class State>
     auto& state() {
         return std::get<State>(states_);
+    }
+
+    template<class State, class Context>
+    void init_context(Context &c) {
+        if constexpr (detail::has_access_context_type<State>::value) {
+            state<State>().ctx_ = &c;
+        }
     }
 
 private:
