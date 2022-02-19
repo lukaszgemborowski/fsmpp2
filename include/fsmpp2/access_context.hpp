@@ -30,6 +30,7 @@ struct access_context final {
         return std::get<T &>(ctx_);
     }
 
+private:
     std::tuple<C &, D &...> ctx_;
 };
 
@@ -67,7 +68,7 @@ struct access_context<C> final {
         return ctx_;
     }
 
-    // TODO: make it inaccessible for State subclass
+private:
     C& ctx_;
 };
 
