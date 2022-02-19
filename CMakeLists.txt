@@ -2,7 +2,7 @@ cmake_policy(SET CMP0048 NEW) # enable use of VERSION in project() function
 
 project(
     fsmpp2
-    VERSION 0.3.0
+    VERSION 0.4.0
     HOMEPAGE_URL "https://github.com/lukaszgemborowski/fsmpp2"
     LANGUAGES CXX
 )
