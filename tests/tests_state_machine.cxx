@@ -88,3 +88,4 @@ TEST_CASE("Multiple contexts", "[contexts][state_machine]")
     CHECK(ctx_a.value == true);
     CHECK(ctx_b.value == true);
 }
+

@@ -6,12 +6,12 @@ Table of contents:
   * [Requirements](#requirements)
 * [Overview](#overview)
   * [State](#state)
-  * [Context](#context)
-    * [Accept in state's constructor](#accept-in-states-constructor)
-    * [Bring in automaticall by using access_context](#bring-in-automaticall-by-using-access_context)
-    * [Accept in event handler function](#accept-in-event-handler-function)
   * [Context declaration](#context-declaration)
   * [Multiple contexts](#multiple-contexts)
+  * [Accessing context](#accessing-context)
+    * [Accessing in state constructor](#accessing-in-state-constructor)
+    * [Accessing in event handler](#accessing-in-event-handler)
+    * [Accessing multiple contexts](#accessing-multiple-contexts)
   * [State machine](#state-machine)
   * [Event passing](#event-passing)
   * [State transitions](#state-transitions)
@@ -75,45 +75,6 @@ States are not heap-allocated, state machine holds all states in std::variant.
 
 While states are short living objects and the user have little to no control over how they are managed it is possible to pass a custom object reference (Context) to a state. Context is an arbitrary object that serves as long living shared data space. There are several ways to access a common Context from a state
 
-### Accept in state's constructor
-
-```cpp
-struct CustomContext {};
-struct A_State : fsmpp2::state<> {
-  A_State(CustomContext &) {}
-};
-```
-
-### Bring in automaticall by using access_context
-
-```cpp
-struct CustomContext { int var = 0; };
-struct A_State
-  : fsmpp2::state<>
-  , fsmpp2::access_context<CustomContext>
-{
-  auto handle(Event) {
-    get_context().var = 42;
-    return handled();
-  }
-};
-```
-
-> :warning: **You can't use get_context() from state's constructor**, it will be populated after the object is created.
-
-### Accept in event handler function
-
-```cpp
-struct CustomContext { int var = 0; };
-struct A_State : fsmpp2::state<>
-{
-  auto handle(Event, CustomContext& ctx) {
-    ctx.var = 42;
-    return handled();
-  }
-};
-```
-
 ## Context declaration
 
 To pass a context down to state machine state you need to declare it in state_machine template. There are two ways of doing that, explicitly parametrize the template:
@@ -145,34 +106,71 @@ fsmpp2::state_machine sm{States{}, Events{}, ctx};
 In case you need different type of contexts in different states you can declare a set of contexts:
 
 ```cpp
-struct CtxA { bool value = false; };
-struct CtxB { bool value = false; };
-
-struct CtxStateB : fsmpp2::state<>
-{
-    CtxStateB(CtxB &ctx) {
-        ctx.value = true;
-    }
-};
-
-struct CtxStateA : fsmpp2::state<>
-{
-    CtxStateA(CtxA &ctx) {
-        ctx.value = true;
-    }
-
-    auto handle(Ev1) { return transition<CtxStateB>(); }
-};
+struct CtxA;
+struct CtxB;
+struct State;
 
 CtxA ctx_a;
 CtxB ctx_b;
 
 fsmpp2::state_machine sm {
-    fsmpp2::states<CtxStateA, CtxStateB>{},
+    fsmpp2::states<State>{},
     fsmpp2::events<Ev1>{},
     fsmpp2::contexts{ctx_a, ctx_b}
 };
 ```
+
+## Accessing context
+
+Context can be accessed from within state constructor or/and even handler.
+
+### Accessing in state constructor
+
+```cpp
+struct CustomContext {};
+struct A_State : fsmpp2::state<> {
+  A_State(CustomContext &) {}
+};
+```
+
+### Accessing in event handler
+
+```cpp
+struct CustomContext { int var = 0; };
+struct A_State : fsmpp2::state<>
+{
+  auto handle(Event, CustomContext& ctx) {
+    ctx.var = 42;
+    return handled();
+  }
+};
+```
+
+### Accessing multiple contexts
+
+If there are multiple contexts in the state machine `access_context` may be use to access multiple contexts in constructor or event handler, eg:
+
+```cpp
+struct CtxA;
+struct CtxB;
+struct CtxC;
+
+struct State : fsmpp2::state<>
+{
+    State(fsmpp2::access_context<CtxA> c)
+    {
+        c.get_context().member;
+    }
+    
+    auto handle(EventX, fsmpp2::access_context<CtxB, CtxC> c)
+    {
+        c.get_context<CtxB>().b_member;
+        c.get_context<CtxC>().c_member;
+        return handled();
+    }
+};
+```
+
 
 ## State machine
 

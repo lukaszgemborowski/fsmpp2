@@ -97,39 +97,6 @@ struct state {
     }
 };
 
-template<class C, class... D>
-struct access_context {
-    using access_context_type = meta::type_list<C, D...>;
-
-    template<class T>
-    T& get_context() {
-        return *std::get<T *>(ctx_);
-    }
-
-    std::tuple<C *, D *...> ctx_;
-};
-
-/**
- * @brief Brings the context into the State automatically.
- */
-template<class C>
-struct access_context<C> {
-    using access_context_type = C;
-
-    /**
-     * @brief Retrieve a context.
-     *
-     * @warning Calling this method in constructor is undefined behavior (crash in practice).
-     *          If you need to access the Context in the constructor, get it via State's ctor parameter.
-     */
-    C& get_context() {
-        return *ctx_;
-    }
-
-    // TODO: make it inaccessible for State subclass
-    C* ctx_ = nullptr;
-};
-
 #ifdef FSMPP2_USE_CPP20
 namespace detail {
 template<class...> struct is_states_list : std::false_type {};
