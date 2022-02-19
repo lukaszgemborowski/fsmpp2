@@ -38,6 +38,9 @@ template<class... T> struct contexts {
         return std::get<std::add_lvalue_reference_t<U>>(contexts_);
     }
 
+    template<class U>
+    static auto constexpr has = meta::type_list_has<U>(meta::type_list<T...>{});
+
 private:
     std::tuple<T&...> contexts_;
 };

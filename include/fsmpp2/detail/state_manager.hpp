@@ -74,6 +74,7 @@ public:
                 tracer_.template begin_event_handling<
                     std::remove_reference_t<decltype(state)>,
                     std::remove_reference_t<decltype(e)>>();
+
                 result = handle(state, e);
                 tracer_.end_event_handling(result);
             });

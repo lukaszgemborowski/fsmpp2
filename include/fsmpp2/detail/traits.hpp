@@ -1,6 +1,8 @@
 #ifndef FSMPP_DETAIL_TRAITS_HPP
 #define FSMPP_DETAIL_TRAITS_HPP
 
+#include "fsmpp2/access_context.hpp"
+
 namespace fsmpp2::detail
 {
 

@@ -2,6 +2,7 @@
 #define FSMPP2_STATE_CONTAINER_HPP
 
 #include "fsmpp2/meta.hpp"
+#include "fsmpp2/access_context.hpp"
 #include "fsmpp2/detail/traits.hpp"
 #include <variant>
 

@@ -51,6 +51,12 @@ public:
     {
     }
 
+    template<class T>
+    transitions(transitions<T>) noexcept
+        : idx {meta::type_list_index<T>(list{})}
+        , outcome {result::transition}
+    {}
+
     /**
      * @brief Construct a new transitions object indicating handled event
      */
