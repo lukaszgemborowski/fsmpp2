@@ -92,6 +92,41 @@ TEST_CASE("Is able to accept a reference to one of the contexts from a set", "[s
     CHECK(ctx.some_value == 1);
 }
 
+TEST_CASE("Is able to use access_context in constructor to access single context", "[context][contexts]")
+{
+    Context ctx;
+    AnotherContext actx;
+
+    struct State : fsmpp2::state<> {
+        State(fsmpp2::access_context<Context> c)
+        {
+            c.get_context().some_value = 42;
+        }
+    };
+
+    fsmpp2::state_machine sm {fsmpp2::states<State>{}, fsmpp2::events<>{}, fsmpp2::contexts{actx, ctx}};
+    REQUIRE(ctx.some_value == 42);
+    REQUIRE(actx.another_value == 0);
+}
+
+TEST_CASE("Is able to use access_context in constructor to access multiple contexts", "[context][contexts]")
+{
+    Context ctx;
+    AnotherContext actx;
+
+    struct State : fsmpp2::state<> {
+        State(fsmpp2::access_context<Context, AnotherContext> c)
+        {
+            c.get_context<Context>().some_value = 42;
+            c.get_context<AnotherContext>().another_value = 43;
+        }
+    };
+
+    fsmpp2::state_machine sm {fsmpp2::states<State>{}, fsmpp2::events<>{}, fsmpp2::contexts{actx, ctx}};
+    REQUIRE(ctx.some_value == 42);
+    REQUIRE(actx.another_value == 43);
+}
+
 TEST_CASE("Check single argument constructor", "[state_machine][context]")
 {
     using sm_type = fsmpp2::state_machine<

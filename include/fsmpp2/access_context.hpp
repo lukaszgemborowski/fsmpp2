@@ -22,15 +22,15 @@ struct access_context final {
 
     template<class T>
     T& get_context() noexcept {
-        return std::get<T>(ctx_);
+        return std::get<T &>(ctx_);
     }
 
     template<class T>
     T const& get_context() const noexcept {
-        return std::get<T>(ctx_);
+        return std::get<T &>(ctx_);
     }
 
-    std::tuple<C, D...> ctx_;
+    std::tuple<C &, D &...> ctx_;
 };
 
 /**
@@ -41,7 +41,7 @@ struct access_context<C> final {
     using access_context_type = C;
 
     access_context(C& c) noexcept
-        : ctx_ {&c}
+        : ctx_ {c}
     {
     }
 

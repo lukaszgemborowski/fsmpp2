@@ -116,10 +116,14 @@ private:
 
     template<class T, class... C>
     void emplace_state(fsmpp2::contexts<C...> &ctx) {
-        if constexpr(is_constructible_by_one_of<T, C...>()) {
-            (try_emplace_state<T, C, C...>(ctx), ...);
+        if constexpr(std::is_constructible_v<T, fsmpp2::contexts<C...> &>) {
+            states_.template enter<T>(ctx);
         } else {
-            states_.template enter<T>();
+            if constexpr(is_constructible_by_one_of<T, C...>()) {
+                (try_emplace_state<T, C, C...>(ctx), ...);
+            } else {
+                states_.template enter<T>();
+            }
         }
     }
 
