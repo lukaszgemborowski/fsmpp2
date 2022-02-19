@@ -52,7 +52,6 @@ public:
 
         // construct state
         emplace_state<T>(context_);
-        states_.template init_context<T>(context_);
     }
 
     void exit() {

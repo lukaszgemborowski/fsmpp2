@@ -8,7 +8,7 @@ namespace fsmpp2
 {
 
 template<class C, class... D>
-struct access_context {
+struct access_context final {
     using access_context_type = meta::type_list<C, D...>;
 
     template<
@@ -36,7 +36,7 @@ struct access_context {
  * @brief Brings the context into the State automatically.
  */
 template<class C>
-struct access_context<C> {
+struct access_context<C> final {
     using access_context_type = C;
 
     access_context(C& c)
