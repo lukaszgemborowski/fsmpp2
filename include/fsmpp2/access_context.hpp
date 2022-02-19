@@ -15,21 +15,22 @@ struct access_context final {
         class T,
         class = std::enable_if_t<T::template has<C> && (T::template has<D> && ...)>
     >
-    access_context(T& tuple_like)
-        : ctx_ {&tuple_like.template get<C>(), &tuple_like.template get<D>()...}
+    access_context(T& tuple_like) noexcept
+        : ctx_ {tuple_like.template get<C>(), tuple_like.template get<D>()...}
     {
     }
 
-    access_context()
-        : ctx_ {}
-    {}
-
     template<class T>
-    T& get_context() {
-        return *std::get<T *>(ctx_);
+    T& get_context() noexcept {
+        return std::get<T>(ctx_);
     }
 
-    std::tuple<C *, D *...> ctx_;
+    template<class T>
+    T const& get_context() const noexcept {
+        return std::get<T>(ctx_);
+    }
+
+    std::tuple<C, D...> ctx_;
 };
 
 /**
@@ -39,7 +40,7 @@ template<class C>
 struct access_context<C> final {
     using access_context_type = C;
 
-    access_context(C& c)
+    access_context(C& c) noexcept
         : ctx_ {&c}
     {
     }
@@ -48,14 +49,9 @@ struct access_context<C> final {
         class U,
         class = std::enable_if_t<U::template has<C>>
     >
-    access_context(U& tuple_like)
-        : ctx_ {&tuple_like.template get<C>()}
+    access_context(U& tuple_like) noexcept
+        : ctx_ {tuple_like.template get<C>()}
     {}
-
-    access_context()
-        : ctx_ {nullptr}
-    {}
-
 
     /**
      * @brief Retrieve a context.
@@ -63,12 +59,16 @@ struct access_context<C> final {
      * @warning Calling this method in constructor is undefined behavior (crash in practice).
      *          If you need to access the Context in the constructor, get it via State's ctor parameter.
      */
-    C& get_context() {
-        return *ctx_;
+    C& get_context() noexcept {
+        return ctx_;
+    }
+
+    C const& get_context() const noexcept {
+        return ctx_;
     }
 
     // TODO: make it inaccessible for State subclass
-    C* ctx_ = nullptr;
+    C& ctx_;
 };
 
 } // namespace fsmpp2
