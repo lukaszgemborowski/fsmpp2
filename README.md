@@ -42,7 +42,7 @@ It is still not a production grade software, use with caution, report any issues
 
 ## Requirements
 
-Currently only C++17 capable compiler is required with some part of standard library: type_traits, variant and optional.
+Currently only C++17 capable compiler is required with some part of standard library: type_traits, variant and tuple.
 
 # Overview
 
